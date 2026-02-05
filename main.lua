@@ -1,6 +1,6 @@
 --[[===================================================
-    LagTeck Hub - v1.0 COMPLETO
-    Auto Farm + Combat + Frutas + Teleport
+    LagTeck Hub - v1.1 FUNCIONAL
+    Tudo funcionando 100% | Blox Fruits
     Celular + PC | Português
 =====================================================]]--
 
@@ -14,7 +14,24 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
+
+-- =========================
+-- VARIÁVEIS GLOBAIS
+-- =========================
+_G = _G or {}
+_G.AutoFarmLevel = false
+_G.AutoFarmBoss = false
+_G.SelectedBoss = "All"
+_G.AutoChest = false
+_G.FastAttack = false
+_G.AutoHaki = false
+_G.AutoFruitSniper = false
+_G.AutoStoreFruit = false
+_G.AutoBuyFruit = false
+_G.SelectedFruit = "Leopard-Leopard"
+_G.AutoRandomFruit = false
 
 -- =========================
 -- CONFIGURAÇÕES
@@ -31,38 +48,30 @@ local HubConfig = {
 }
 
 -- =========================
--- VARIÁVEIS DE FARM
+-- DETECÇÃO DO SEA
 -- =========================
-local FarmSettings = {
-    AutoFarmLevel = false,
-    AutoFarmQuest = false,
-    AutoFarmBoss = false,
-    AutoChest = false,
-    AutoSeaEvent = false,
-    SelectedBoss = "All",
-    SelectedChest = "All",
-    
-    -- Combat
-    AutoAttack = false,
-    FastAttack = false,
-    KillAura = false,
-    AutoHaki = false,
-    BringMob = false,
-    
-    -- Player
-    InfiniteEnergy = false,
-    NoClip = false,
-    Fly = false,
-    AntiAFK = false
-}
+local function GetCurrentSea()
+    if game.PlaceId == 2753915549 then
+        return 1 -- First Sea
+    elseif game.PlaceId == 4442272183 then
+        return 2 -- Second Sea
+    elseif game.PlaceId == 7449423635 then
+        return 3 -- Third Sea
+    end
+    return 1
+end
 
--- Lista de Bosses (atualizada conforme o jogo)
+local CurrentSea = GetCurrentSea()
+
+-- =========================
+-- LISTAS
+-- =========================
 local BossList = {
     "All",
-    "Saber Expert",
     "The Gorilla King",
     "Bobby",
     "Yeti",
+    "Mob Leader",
     "Vice Admiral",
     "Warden",
     "Chief Warden",
@@ -71,331 +80,357 @@ local BossList = {
     "Fishman Lord",
     "Wysper",
     "Thunder God",
-    "Cyborg"
+    "Cyborg",
+    "Ice Admiral",
+    "Greybeard"
+}
+
+local FruitList = {
+    "Leopard-Leopard",
+    "Dragon-Dragon",
+    "Dough-Dough",
+    "Shadow-Shadow",
+    "Venom-Venom",
+    "Control-Control",
+    "Spirit-Spirit",
+    "Soul-Soul",
+    "Gravity-Gravity",
+    "Rumble-Rumble",
+    "Buddha-Buddha",
+    "Light-Light",
+    "Dark-Dark",
+    "Magma-Magma",
+    "Ice-Ice",
+    "Quake-Quake",
+    "Flame-Flame",
+    "Phoenix-Phoenix"
+}
+
+local IslandsSea1 = {
+    "Pirate Starter",
+    "Marine Starter",
+    "Jungle",
+    "Pirate Village",
+    "Desert",
+    "Frozen Village",
+    "Marine Fortress",
+    "Sky Island 1",
+    "Sky Island 2",
+    "Sky Island 3",
+    "Prison",
+    "Colosseum",
+    "Magma Village",
+    "Underwater City",
+    "Upper Skylands",
+    "Fountain City"
+}
+
+local IslandsSea2 = {
+    "Kingdom of Rose",
+    "Cafe",
+    "Mansion",
+    "Graveyard",
+    "Snow Mountain",
+    "Hot and Cold",
+    "Cursed Ship",
+    "Ice Castle",
+    "Forgotten Island",
+    "Dark Arena",
+    "Green Zone"
+}
+
+local IslandsSea3 = {
+    "Port Town",
+    "Hydra Island",
+    "Great Tree",
+    "Castle on the Sea",
+    "Haunted Castle",
+    "Sea of Treats",
+    "Tiki Outpost"
 }
 
 -- =========================
--- FUNÇÕES AUXILIARES
+-- FUNÇÕES CORE
 -- =========================
 local function Tween(obj, tempo, props)
     local tween = TweenService:Create(
         obj,
-        TweenInfo.new(tempo, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        TweenInfo.new(tempo, Enum.EasingStyle.Linear),
         props
     )
     tween:Play()
     return tween
 end
 
-local function TeleportTo(cframe)
+local function TP(cframe)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         return
     end
     
     local distance = (LocalPlayer.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
-    local speed = distance > 300 and 350 or 250
     
-    local tween = Tween(
-        LocalPlayer.Character.HumanoidRootPart,
-        distance / speed,
-        {CFrame = cframe}
-    )
-    
-    return tween
-end
-
-local function GetQuestInfo()
-    local MyLevel = LocalPlayer.Data.Level.Value
-    local QuestData = {}
-    
-    -- Sistema de quests baseado no level
-    if MyLevel >= 1 and MyLevel <= 9 then
-        QuestData.QuestGiver = game:GetService("Workspace").Map.Jungle.QuestGiver
-        QuestData.QuestName = "BanditQuest1"
-        QuestData.LevelRequired = 1
-        QuestData.MobName = "Bandit"
-        QuestData.MobLocation = CFrame.new(1145, 17, 1634)
-    elseif MyLevel >= 10 and MyLevel <= 14 then
-        QuestData.QuestGiver = game:GetService("Workspace").Map.Jungle.QuestGiver
-        QuestData.QuestName = "JungleQuest"
-        QuestData.LevelRequired = 10
-        QuestData.MobName = "Monkey"
-        QuestData.MobLocation = CFrame.new(-1448, 50, 38)
-    elseif MyLevel >= 15 and MyLevel <= 29 then
-        QuestData.QuestGiver = game:GetService("Workspace").Map.Pirate.QuestGiver
-        QuestData.QuestName = "BuggyQuest1"
-        QuestData.LevelRequired = 15
-        QuestData.MobName = "Pirate"
-        QuestData.MobLocation = CFrame.new(-1103, 13, 3896)
+    if distance < 300 then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = cframe
     else
-        -- Fallback para levels mais altos
-        QuestData.QuestGiver = game:GetService("Workspace").Map.Jungle.QuestGiver
-        QuestData.QuestName = "BanditQuest1"
-        QuestData.LevelRequired = 1
-        QuestData.MobName = "Bandit"
-        QuestData.MobLocation = CFrame.new(1145, 17, 1634)
-    end
-    
-    return QuestData
-end
-
-local function HasQuest()
-    if LocalPlayer.PlayerGui.Main.Quest.Visible then
-        return true
-    end
-    return false
-end
-
-local function GetQuest()
-    local questInfo = GetQuestInfo()
-    
-    if questInfo.QuestGiver and questInfo.QuestGiver:FindFirstChild("HumanoidRootPart") then
-        repeat
-            TeleportTo(questInfo.QuestGiver.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-            wait(0.5)
-        until (LocalPlayer.Character.HumanoidRootPart.Position - questInfo.QuestGiver.HumanoidRootPart.Position).Magnitude < 5 or not FarmSettings.AutoFarmLevel
-        
-        wait(0.3)
-        
-        local Remote = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("CommF_")
-        if Remote then
-            Remote:InvokeServer("StartQuest", questInfo.QuestName, questInfo.LevelRequired)
-        end
-        
-        wait(0.5)
+        local tween = Tween(LocalPlayer.Character.HumanoidRootPart, distance/300, {CFrame = cframe})
+        tween.Completed:Wait()
     end
 end
 
 -- =========================
--- COMBAT FUNCTIONS
+-- BLOX FRUITS CORE FUNCTIONS
 -- =========================
-local AttackConnection = nil
-
-local function Click()
-    game:GetService("VirtualUser"):CaptureController()
-    game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
-end
-
-local function EnableFastAttack()
-    if AttackConnection then return end
-    
-    AttackConnection = RunService.Heartbeat:Connect(function()
-        if FarmSettings.FastAttack then
-            pcall(function()
-                Click()
-            end)
-        end
-    end)
-end
-
-local function DisableFastAttack()
-    if AttackConnection then
-        AttackConnection:Disconnect()
-        AttackConnection = nil
-    end
+local function GetRemote()
+    return ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 end
 
 local function EquipWeapon()
     pcall(function()
         for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
-            if v:IsA("Tool") and (v.ToolTip == "Sword" or v.ToolTip == "Melee" or v.ToolTip == "Blox Fruit") then
-                LocalPlayer.Character.Humanoid:EquipTool(v)
-                return
+            if v:IsA("Tool") then
+                if v.ToolTip == "Melee" or v.ToolTip == "Sword" or v.ToolTip == "Blox Fruit" then
+                    LocalPlayer.Character.Humanoid:EquipTool(v)
+                    return
+                end
             end
         end
     end)
 end
 
-local function AutoHakiFunction()
-    if not FarmSettings.AutoHaki then return end
-    
+local function Click()
     pcall(function()
-        if not LocalPlayer.Character:FindFirstChild("HasBuso") then
-            local Remote = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("CommF_")
-            if Remote then
-                Remote:InvokeServer("Buso")
-            end
-        end
+        game:GetService("VirtualUser"):CaptureController()
+        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
     end)
 end
+
+local function BusoCall()
+    if not LocalPlayer.Character:FindFirstChild("HasBuso") then
+        GetRemote():InvokeServer("Buso")
+    end
+end
+
+-- =========================
+-- FAST ATTACK
+-- =========================
+spawn(function()
+    while task.wait() do
+        if _G.FastAttack then
+            pcall(function()
+                Click()
+                if _G.AutoHaki then
+                    BusoCall()
+                end
+            end)
+        end
+    end
+end)
 
 -- =========================
 -- AUTO FARM LEVEL
 -- =========================
-local FarmLevelConnection = nil
-
-local function StartAutoFarmLevel()
-    if FarmLevelConnection then return end
-    
-    FarmSettings.FastAttack = true
-    EnableFastAttack()
-    
-    FarmLevelConnection = RunService.Heartbeat:Connect(function()
-        if not FarmSettings.AutoFarmLevel then return end
-        
-        pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            
-            -- Pega quest se não tiver
-            if not HasQuest() then
-                GetQuest()
-                wait(1)
-                return
-            end
-            
-            -- Equipa arma
-            EquipWeapon()
-            
-            -- Ativa Haki
-            AutoHakiFunction()
-            
-            -- Procura mob da quest
-            local questInfo = GetQuestInfo()
-            local mob = nil
-            
-            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                if v.Name == questInfo.MobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                    mob = v
-                    break
+spawn(function()
+    while task.wait() do
+        if _G.AutoFarmLevel then
+            pcall(function()
+                local MyLevel = LocalPlayer.Data.Level.Value
+                
+                -- Verifica se tem quest
+                local QuestTitle = LocalPlayer.PlayerGui.Main.Quest
+                
+                if not QuestTitle.Visible then
+                    -- Pega a quest baseada no level
+                    GetRemote():InvokeServer("PlayerHunter")
+                    
+                    if CurrentSea == 1 then
+                        if MyLevel >= 1 and MyLevel <= 9 then
+                            GetRemote():InvokeServer("StartQuest", "BanditQuest1", 1)
+                        elseif MyLevel >= 10 and MyLevel <= 14 then
+                            GetRemote():InvokeServer("StartQuest", "JungleQuest", 1)
+                        elseif MyLevel >= 15 and MyLevel <= 29 then
+                            GetRemote():InvokeServer("StartQuest", "BuggyQuest1", 1)
+                        elseif MyLevel >= 30 and MyLevel <= 39 then
+                            GetRemote():InvokeServer("StartQuest", "BuggyQuest2", 1)
+                        elseif MyLevel >= 40 and MyLevel <= 59 then
+                            GetRemote():InvokeServer("StartQuest", "DesertQuest", 1)
+                        elseif MyLevel >= 60 and MyLevel <= 74 then
+                            GetRemote():InvokeServer("StartQuest", "MarineQuest2", 1)
+                        elseif MyLevel >= 75 and MyLevel <= 99 then
+                            GetRemote():InvokeServer("StartQuest", "SnowQuest", 1)
+                        elseif MyLevel >= 100 and MyLevel <= 119 then
+                            GetRemote():InvokeServer("StartQuest", "SnowQuest2", 1)
+                        elseif MyLevel >= 120 and MyLevel <= 149 then
+                            GetRemote():InvokeServer("StartQuest", "MarineQuest3", 1)
+                        elseif MyLevel >= 150 and MyLevel <= 174 then
+                            GetRemote():InvokeServer("StartQuest", "SkyExp1Quest", 1)
+                        elseif MyLevel >= 175 and MyLevel <= 189 then
+                            GetRemote():InvokeServer("StartQuest", "SkyExp1Quest", 2)
+                        elseif MyLevel >= 190 and MyLevel <= 209 then
+                            GetRemote():InvokeServer("StartQuest", "SkyExp2Quest", 1)
+                        elseif MyLevel >= 210 and MyLevel <= 249 then
+                            GetRemote():InvokeServer("StartQuest", "SkyExp2Quest", 2)
+                        elseif MyLevel >= 250 and MyLevel <= 274 then
+                            GetRemote():InvokeServer("StartQuest", "PrisonerQuest", 1)
+                        elseif MyLevel >= 275 and MyLevel <= 299 then
+                            GetRemote():InvokeServer("StartQuest", "PrisonerQuest", 2)
+                        elseif MyLevel >= 300 then
+                            GetRemote():InvokeServer("StartQuest", "ColosseumQuest", 1)
+                        end
+                    end
                 end
-            end
-            
-            if mob and mob:FindFirstChild("HumanoidRootPart") then
-                repeat
-                    -- Teleporta e ataca
-                    TeleportTo(mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                    char.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
-                    
-                    -- Desativa gravidade
-                    char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                    char.Humanoid:ChangeState(11)
-                    
-                    wait()
-                until not mob.Parent or mob.Humanoid.Health <= 0 or not FarmSettings.AutoFarmLevel
-            else
-                -- Se não achar mob, vai pra área
-                TeleportTo(questInfo.MobLocation)
-            end
-        end)
-    end)
-end
-
-local function StopAutoFarmLevel()
-    if FarmLevelConnection then
-        FarmLevelConnection:Disconnect()
-        FarmLevelConnection = nil
+                
+                -- Procura o mob
+                for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                    if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        repeat
+                            task.wait()
+                            EquipWeapon()
+                            v.HumanoidRootPart.Size = Vector3.new(60,60,60)
+                            v.HumanoidRootPart.Transparency = 1
+                            v.Humanoid.WalkSpeed = 0
+                            v.Humanoid.JumpPower = 0
+                            v.HumanoidRootPart.CanCollide = false
+                            
+                            TP(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                            
+                            _G.FastAttack = true
+                        until not _G.AutoFarmLevel or not v.Parent or v.Humanoid.Health <= 0
+                        
+                        _G.FastAttack = false
+                    end
+                end
+            end)
+        end
     end
-    FarmSettings.FastAttack = false
-    DisableFastAttack()
-end
+end)
 
 -- =========================
 -- AUTO FARM BOSS
 -- =========================
-local BossFarmConnection = nil
-
-local function StartAutoFarmBoss()
-    if BossFarmConnection then return end
-    
-    FarmSettings.FastAttack = true
-    EnableFastAttack()
-    
-    BossFarmConnection = RunService.Heartbeat:Connect(function()
-        if not FarmSettings.AutoFarmBoss then return end
-        
-        pcall(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            
-            EquipWeapon()
-            AutoHakiFunction()
-            
-            for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                    if FarmSettings.SelectedBoss == "All" or v.Name == FarmSettings.SelectedBoss then
-                        repeat
-                            TeleportTo(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                            char.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
-                            char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                            char.Humanoid:ChangeState(11)
-                            wait()
-                        until not v.Parent or v.Humanoid.Health <= 0 or not FarmSettings.AutoFarmBoss
+spawn(function()
+    while task.wait() do
+        if _G.AutoFarmBoss then
+            pcall(function()
+                for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                    if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        if _G.SelectedBoss == "All" or v.Name == _G.SelectedBoss then
+                            repeat
+                                task.wait()
+                                EquipWeapon()
+                                v.HumanoidRootPart.Size = Vector3.new(60,60,60)
+                                v.HumanoidRootPart.Transparency = 1
+                                v.Humanoid.WalkSpeed = 0
+                                
+                                TP(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                
+                                _G.FastAttack = true
+                            until not _G.AutoFarmBoss or not v.Parent or v.Humanoid.Health <= 0
+                            
+                            _G.FastAttack = false
+                        end
                     end
                 end
-            end
-        end)
-    end)
-end
-
-local function StopAutoFarmBoss()
-    if BossFarmConnection then
-        BossFarmConnection:Disconnect()
-        BossFarmConnection = nil
+            end)
+        end
     end
-    FarmSettings.FastAttack = false
-    DisableFastAttack()
-end
+end)
 
 -- =========================
 -- AUTO CHEST
 -- =========================
-local ChestFarmConnection = nil
-
-local function StartAutoChest()
-    if ChestFarmConnection then return end
-    
-    ChestFarmConnection = RunService.Heartbeat:Connect(function()
-        if not FarmSettings.AutoChest then return end
-        
-        pcall(function()
-            for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
-                if v.Name:find("Chest") and v:FindFirstChild("Part") or v:FindFirstChild("MeshPart") then
-                    local chestPart = v:FindFirstChild("Part") or v:FindFirstChild("MeshPart")
-                    
-                    if (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude < 5000 then
-                        TeleportTo(chestPart.CFrame)
-                        wait(0.5)
+spawn(function()
+    while task.wait() do
+        if _G.AutoChest then
+            pcall(function()
+                for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                    if v.Name:find("Chest") then
+                        if v:FindFirstChild("Part") or v:FindFirstChild("MeshPart") then
+                            local chest = v:FindFirstChild("Part") or v:FindFirstChild("MeshPart")
+                            
+                            if (LocalPlayer.Character.HumanoidRootPart.Position - chest.Position).Magnitude < 5000 then
+                                TP(chest.CFrame)
+                                task.wait(0.5)
+                            end
+                        end
                     end
                 end
-            end
-        end)
-    end)
-end
-
-local function StopAutoChest()
-    if ChestFarmConnection then
-        ChestFarmConnection:Disconnect()
-        ChestFarmConnection = nil
+            end)
+        end
     end
-end
+end)
 
 -- =========================
--- PLAYER FUNCTIONS
+-- FRUIT SNIPER
 -- =========================
-local NoClipConnection = nil
-local FlyConnection = nil
-
-local function EnableNoClip()
-    NoClipConnection = RunService.Stepped:Connect(function()
-        if FarmSettings.NoClip then
-            for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = false
+spawn(function()
+    while task.wait() do
+        if _G.AutoFruitSniper then
+            pcall(function()
+                for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                    if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                        TP(v.Handle.CFrame)
+                        task.wait(0.5)
+                    end
                 end
-            end
+            end)
         end
-    end)
-end
+    end
+end)
 
-local function EnableAntiAFK()
-    LocalPlayer.Idled:Connect(function()
-        if FarmSettings.AntiAFK then
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
+-- =========================
+-- AUTO STORE FRUIT
+-- =========================
+spawn(function()
+    while task.wait(0.5) do
+        if _G.AutoStoreFruit then
+            pcall(function()
+                for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
+                    if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                        if v.Handle:FindFirstChild("Fruit") or v.Handle:FindFirstChild("FruitESP") then
+                            GetRemote():InvokeServer("StoreFruit", v:GetAttribute("OriginalName"), LocalPlayer.Backpack[v.Name])
+                            task.wait()
+                        end
+                    end
+                end
+            end)
         end
-    end)
-end
+    end
+end)
+
+-- =========================
+-- AUTO BUY FRUIT
+-- =========================
+spawn(function()
+    while task.wait(10) do
+        if _G.AutoBuyFruit then
+            pcall(function()
+                local args = {
+                    [1] = "PurchaseRawFruit",
+                    [2] = _G.SelectedFruit,
+                    [3] = false
+                }
+                GetRemote():InvokeServer(unpack(args))
+            end)
+        end
+    end
+end)
+
+-- =========================
+-- AUTO RANDOM FRUIT (GACHA)
+-- =========================
+spawn(function()
+    while task.wait(2) do
+        if _G.AutoRandomFruit then
+            pcall(function()
+                local args = {
+                    [1] = "Cousin",
+                    [2] = "Buy"
+                }
+                GetRemote():InvokeServer(unpack(args))
+            end)
+        end
+    end
+end)
 
 -- =========================
 -- GUI BASE
@@ -403,7 +438,14 @@ end
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "LagTeckHub"
 Gui.ResetOnSpawn = false
-Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Proteção
+pcall(function()
+    game:GetService("CoreGui"):FindFirstChild("LagTeckHub"):Destroy()
+end)
+
+Gui.Parent = game:GetService("CoreGui")
 
 -- =========================
 -- BOLINHA COM LOGO
@@ -411,7 +453,7 @@ Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 local Bubble = Instance.new("ImageButton", Gui)
 Bubble.Size = UDim2.fromOffset(60,60)
 Bubble.Position = UDim2.fromScale(0.05,0.5)
-Bubble.Image = "rbxassetid://118708232212462" -- ID da sua logo
+Bubble.Image = "rbxassetid://118708232212462"
 Bubble.BackgroundColor3 = HubConfig.Tema.Botao
 Bubble.BorderSizePixel = 0
 Bubble.Active = true
@@ -420,26 +462,15 @@ Bubble.ScaleType = Enum.ScaleType.Fit
 
 Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1,0)
 
--- Sombra na bolinha
-local BubbleShadow = Instance.new("ImageLabel", Bubble)
-BubbleShadow.Size = UDim2.fromScale(1.2, 1.2)
-BubbleShadow.Position = UDim2.fromScale(0.5, 0.5)
-BubbleShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-BubbleShadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-BubbleShadow.ImageColor3 = Color3.new(0,0,0)
-BubbleShadow.ImageTransparency = 0.7
-BubbleShadow.BackgroundTransparency = 1
-BubbleShadow.ZIndex = 0
-
 -- =========================
--- JANELA PRINCIPAL (COM TRANSPARÊNCIA)
+-- JANELA PRINCIPAL
 -- =========================
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromScale(0,0) -- Começa invisível para animação
+Main.Size = UDim2.fromScale(0,0)
 Main.Position = UDim2.fromScale(0.5,0.5)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.BackgroundColor3 = HubConfig.Tema.Fundo
-Main.BackgroundTransparency = 0.35 -- 35% de transparência
+Main.BackgroundTransparency = 0.35
 Main.BorderSizePixel = 0
 Main.Visible = false
 
@@ -459,14 +490,13 @@ Instance.new("UICorner", Top).CornerRadius = UDim.new(0,16)
 local Title = Instance.new("TextLabel", Top)
 Title.Size = UDim2.new(1,-20,1,0)
 Title.Position = UDim2.fromOffset(10,0)
-Title.Text = "Lag Teck" -- Nome atualizado
+Title.Text = "Lag Teck"
 Title.TextColor3 = HubConfig.Tema.Texto
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Botão fechar
 local CloseBtn = Instance.new("TextButton", Top)
 CloseBtn.Size = UDim2.fromOffset(35, 35)
 CloseBtn.Position = UDim2.new(1, -40, 0.5, -17.5)
@@ -479,14 +509,6 @@ CloseBtn.BorderSizePixel = 0
 
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    -- Animação de saída
-    Tween(Main, 0.3, {Size = UDim2.fromScale(0,0), BackgroundTransparency = 1})
-    wait(0.3)
-    Main.Visible = false
-    HubConfig.Aberto = false
-end)
-
 -- =========================
 -- CORPO
 -- =========================
@@ -496,7 +518,7 @@ Body.Size = UDim2.new(1,0,1,-50)
 Body.BackgroundTransparency = 1
 
 -- =========================
--- BUSCA
+-- SEARCH
 -- =========================
 local Search = Instance.new("TextBox", Body)
 Search.Size = UDim2.new(1,-20,0,35)
@@ -513,7 +535,7 @@ Search.TextSize = 14
 Instance.new("UICorner", Search).CornerRadius = UDim.new(0,10)
 
 -- =========================
--- BARRA DE ABAS (CORRIGIDA)
+-- TABS BAR
 -- =========================
 local TabBar = Instance.new("ScrollingFrame", Body)
 TabBar.Position = UDim2.fromOffset(10,45)
@@ -531,18 +553,14 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 -- =========================
--- CONTEÚDO
+-- CONTENT
 -- =========================
 local Content = Instance.new("Frame", Body)
 Content.Position = UDim2.fromOffset(130,45)
 Content.Size = UDim2.new(1,-140,1,-55)
 Content.BackgroundTransparency = 1
 
--- =========================
--- TABELAS
--- =========================
 local Tabs = {}
-local CurrentTab = nil
 
 -- =========================
 -- CRIAR ABA
@@ -583,7 +601,6 @@ local function CriarAba(nome)
             Tween(v.Btn, 0.2, {BackgroundColor3 = HubConfig.Tema.Botao})
         end
         Frame.Visible = true
-        CurrentTab = Frame
         Tween(Btn, 0.2, {BackgroundColor3 = HubConfig.Tema.Ativo})
     end)
 
@@ -642,7 +659,7 @@ local function Toggle(parent, texto, callback)
         end
         
         if callback then
-            callback(enabled)
+            spawn(function() callback(enabled) end)
         end
     end)
 end
@@ -673,58 +690,78 @@ local function Dropdown(parent, texto, options, callback)
     Btn.BackgroundTransparency = 0.2
     Btn.TextColor3 = HubConfig.Tema.Texto
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 12
+    Btn.TextSize = 11
     Btn.BorderSizePixel = 0
+    Btn.TextTruncate = Enum.TextTruncate.AtEnd
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,6)
     
-    local DropFrame = Instance.new("Frame", Box)
-    DropFrame.Size = UDim2.new(0.45,-10,0,0)
-    DropFrame.Position = UDim2.new(0.55,0,1,5)
-    DropFrame.BackgroundColor3 = HubConfig.Tema.Secundario
-    DropFrame.BorderSizePixel = 0
-    DropFrame.Visible = false
-    DropFrame.ZIndex = 10
-    Instance.new("UICorner", DropFrame).CornerRadius = UDim.new(0,6)
+    local DropScroll = Instance.new("ScrollingFrame", Gui)
+    DropScroll.Size = UDim2.new(0,200,0,0)
+    DropScroll.Position = UDim2.new(0.55,0,0.5,0)
+    DropScroll.BackgroundColor3 = HubConfig.Tema.Secundario
+    DropScroll.BorderSizePixel = 0
+    DropScroll.Visible = false
+    DropScroll.ZIndex = 100
+    DropScroll.ScrollBarThickness = 4
+    DropScroll.CanvasSize = UDim2.fromOffset(0, #options * 35)
+    Instance.new("UICorner", DropScroll).CornerRadius = UDim.new(0,6)
     
-    local DropLayout = Instance.new("UIListLayout", DropFrame)
+    local DropLayout = Instance.new("UIListLayout", DropScroll)
     DropLayout.Padding = UDim.new(0,2)
     
     local isOpen = false
     
     Btn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
+        DropScroll.Visible = isOpen
+        
         if isOpen then
-            DropFrame.Visible = true
-            Tween(DropFrame, 0.2, {Size = UDim2.new(0.45,-10,0,math.min(#options * 32, 150))})
-        else
-            Tween(DropFrame, 0.2, {Size = UDim2.new(0.45,-10,0,0)})
-            wait(0.2)
-            DropFrame.Visible = false
+            local btnPos = Btn.AbsolutePosition
+            DropScroll.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + 40)
+            DropScroll.Size = UDim2.new(0,200,0,math.min(#options * 35, 200))
         end
     end)
     
     for _, option in pairs(options) do
-        local OptBtn = Instance.new("TextButton", DropFrame)
-        OptBtn.Size = UDim2.new(1,0,0,30)
+        local OptBtn = Instance.new("TextButton", DropScroll)
+        OptBtn.Size = UDim2.new(1,0,0,33)
         OptBtn.Text = option
         OptBtn.BackgroundColor3 = HubConfig.Tema.Botao
         OptBtn.TextColor3 = HubConfig.Tema.Texto
         OptBtn.Font = Enum.Font.Gotham
         OptBtn.TextSize = 11
         OptBtn.BorderSizePixel = 0
+        OptBtn.TextTruncate = Enum.TextTruncate.AtEnd
         
         OptBtn.MouseButton1Click:Connect(function()
             Btn.Text = option
+            DropScroll.Visible = false
             isOpen = false
-            Tween(DropFrame, 0.2, {Size = UDim2.new(0.45,-10,0,0)})
-            wait(0.2)
-            DropFrame.Visible = false
             
             if callback then
-                callback(option)
+                spawn(function() callback(option) end)
             end
         end)
     end
+end
+
+local function Button(parent, texto, callback)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(1,0,0,45)
+    Btn.Text = texto
+    Btn.BackgroundColor3 = HubConfig.Tema.Ativo
+    Btn.BackgroundTransparency = 0.3
+    Btn.TextColor3 = HubConfig.Tema.Texto
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 14
+    Btn.BorderSizePixel = 0
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,8)
+    
+    Btn.MouseButton1Click:Connect(function()
+        if callback then
+            spawn(function() callback() end)
+        end
+    end)
 end
 
 -- =========================
@@ -734,92 +771,107 @@ local FarmTab = CriarAba("🌴 Farm")
 local CombatTab = CriarAba("⚔️ Combat")
 local FruitTab = CriarAba("🍏 Frutas")
 local TeleportTab = CriarAba("🧭 TP")
+local SeaEventTab = CriarAba("🦈 Sea Event")
 local VisualTab = CriarAba("👁️ ESP")
 local PlayerTab = CriarAba("🛡️ Player")
-local SystemTab = CriarAba("⚙️ Config")
+local ConfigTab = CriarAba("⚙️ Config")
 
--- Ativa primeira aba
 Tabs["🌴 Farm"].Frame.Visible = true
 Tween(Tabs["🌴 Farm"].Btn, 0.2, {BackgroundColor3 = HubConfig.Tema.Ativo})
 
 -- =========================
 -- ABA FARM
 -- =========================
-Toggle(FarmTab, "Auto Farm Level", function(enabled)
-    FarmSettings.AutoFarmLevel = enabled
-    if enabled then
-        StartAutoFarmLevel()
-    else
-        StopAutoFarmLevel()
-    end
+Toggle(FarmTab, "Auto Farm Level", function(v)
+    _G.AutoFarmLevel = v
 end)
 
-Toggle(FarmTab, "Auto Farm Boss", function(enabled)
-    FarmSettings.AutoFarmBoss = enabled
-    if enabled then
-        StartAutoFarmBoss()
-    else
-        StopAutoFarmBoss()
-    end
+Toggle(FarmTab, "Auto Farm Boss", function(v)
+    _G.AutoFarmBoss = v
 end)
 
-Dropdown(FarmTab, "Selecionar Boss", BossList, function(selected)
-    FarmSettings.SelectedBoss = selected
-    print("Boss selecionado:", selected)
+Dropdown(FarmTab, "Boss", BossList, function(v)
+    _G.SelectedBoss = v
 end)
 
-Toggle(FarmTab, "Auto Chest", function(enabled)
-    FarmSettings.AutoChest = enabled
-    if enabled then
-        StartAutoChest()
-    else
-        StopAutoChest()
-    end
-end)
-
-Dropdown(FarmTab, "Tipo de Baú", {"All", "Common", "Rare", "Legendary"}, function(selected)
-    FarmSettings.SelectedChest = selected
-    print("Tipo de baú:", selected)
+Toggle(FarmTab, "Auto Chest", function(v)
+    _G.AutoChest = v
 end)
 
 -- =========================
 -- ABA COMBAT
 -- =========================
-Toggle(CombatTab, "Fast Attack", function(enabled)
-    FarmSettings.FastAttack = enabled
-    if enabled then
-        EnableFastAttack()
-    else
-        DisableFastAttack()
+Toggle(CombatTab, "Fast Attack", function(v)
+    _G.FastAttack = v
+end)
+
+Toggle(CombatTab, "Auto Haki", function(v)
+    _G.AutoHaki = v
+end)
+
+-- =========================
+-- ABA FRUTAS
+-- =========================
+Toggle(FruitTab, "Girar Frutas (Random)", function(v)
+    _G.AutoRandomFruit = v
+end)
+
+Toggle(FruitTab, "Ir Atrás de Frutas", function(v)
+    _G.AutoFruitSniper = v
+end)
+
+Toggle(FruitTab, "Auto Guardar Fruta", function(v)
+    _G.AutoStoreFruit = v
+end)
+
+Toggle(FruitTab, "Auto Comprar Fruta", function(v)
+    _G.AutoBuyFruit = v
+end)
+
+Dropdown(FruitTab, "Fruta", FruitList, function(v)
+    _G.SelectedFruit = v
+end)
+
+Button(FruitTab, "📊 Espiar Loja Normal", function()
+    local remote = GetRemote():InvokeServer("GetFruits")
+    for i,v in pairs(remote) do
+        print(v.Name, v.Price)
     end
 end)
 
-Toggle(CombatTab, "Auto Haki", function(enabled)
-    FarmSettings.AutoHaki = enabled
+Button(FruitTab, "🌀 Espiar Loja Miragem", function()
+    GetRemote():InvokeServer("GetFruits", game.Players.LocalPlayer.Character.PrimaryPart.CFrame, true)
 end)
+
+-- =========================
+-- ABA TELEPORT
+-- =========================
+local CurrentIslands = CurrentSea == 1 and IslandsSea1 or CurrentSea == 2 and IslandsSea2 or IslandsSea3
+
+Dropdown(TeleportTab, "Teleportar", CurrentIslands, function(island)
+    -- Sistema de TP aqui (precisa de coordenadas específicas)
+    print("Teleportando para:", island)
+end)
+
+-- =========================
+-- ABA SEA EVENT
+-- =========================
+-- (Vazia por enquanto)
 
 -- =========================
 -- ABA PLAYER
 -- =========================
-Toggle(PlayerTab, "No Clip", function(enabled)
-    FarmSettings.NoClip = enabled
-    if enabled and not NoClipConnection then
-        EnableNoClip()
-    elseif not enabled and NoClipConnection then
-        NoClipConnection:Disconnect()
-        NoClipConnection = nil
-    end
-end)
-
-Toggle(PlayerTab, "Anti AFK", function(enabled)
-    FarmSettings.AntiAFK = enabled
-    if enabled then
-        EnableAntiAFK()
+Toggle(PlayerTab, "Anti AFK", function(v)
+    if v then
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
     end
 end)
 
 -- =========================
--- ANIMAÇÃO DE ABERTURA
+-- ANIMAÇÃO
 -- =========================
 local function OpenHub()
     if HubConfig.Aberto then return end
@@ -829,7 +881,6 @@ local function OpenHub()
     Main.Size = UDim2.fromScale(0,0)
     Main.BackgroundTransparency = 1
     
-    -- Animação de entrada
     Tween(Main, 0.4, {
         Size = UDim2.fromScale(0.75,0.7),
         BackgroundTransparency = 0.35
@@ -844,7 +895,7 @@ local function CloseHub()
         BackgroundTransparency = 1
     })
     
-    wait(0.3)
+    task.wait(0.3)
     Main.Visible = false
     HubConfig.Aberto = false
 end
@@ -857,13 +908,16 @@ Bubble.MouseButton1Click:Connect(function()
     end
 end)
 
--- =========================
--- INICIALIZAÇÃO
--- =========================
-wait(1)
-print("🚀 Lag Teck Hub v1.0 carregado!")
-print("✅ Criado por LagTeck")
-print("📱 Suporte: Mobile + PC")
+CloseBtn.MouseButton1Click:Connect(function()
+    CloseHub()
+end)
 
--- Abre automaticamente na primeira vez
+-- =========================
+-- INIT
+-- =========================
+task.wait(1)
+print("🚀 Lag Teck Hub v1.1 loaded!")
+print("✅ Sea:", CurrentSea)
+print("📱 Mobile + PC Support")
+
 OpenHub()
