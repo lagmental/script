@@ -2485,3 +2485,251 @@ task.spawn(function()
                 for _, mobName in pairs(materialMobs) do
                     for i, v in pairs(workspace.Enemies:GetChildren()) do
                         if v.Name == mobName an
+d v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                            repeat task.wait()
+                                if _G.Settings.AutoHaki then AutoHaki() end
+                                EquipWeapon(_G.Settings.SelectWeapon)
+                                
+                                v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                                v.HumanoidRootPart.CanCollide = false
+                                v.Humanoid.WalkSpeed = 0
+                                
+                                topos(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                _G.PosMon = v.HumanoidRootPart.CFrame
+                                _G.StartMagnet = true
+                                
+                                VirtualUser:CaptureController()
+                                VirtualUser:Button1Down(Vector2.new(1280, 672))
+                            until not _G.Settings.FarmMaterials or not v.Parent or v.Humanoid.Health <= 0
+                            
+                            _G.StartMagnet = false
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop Bring Mobs (MELHORADO)
+task.spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.Settings.BringMonster and _G.StartMagnet and _G.PosMon then
+                for i, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        local Distance = (v.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        
+                        if Distance <= _G.Settings.BringMode then
+                            v.HumanoidRootPart.Size = Vector3.new(150, 150, 150)
+                            v.HumanoidRootPart.CFrame = _G.PosMon
+                            v.Humanoid:ChangeState(14)
+                            v.HumanoidRootPart.CanCollide = false
+                            v.Head.CanCollide = false
+                            
+                            if v.Humanoid:FindFirstChild("Animator") then
+                                v.Humanoid.Animator:Destroy()
+                            end
+                            
+                            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- Loop Fast Attack (OTIMIZADO)
+task.spawn(function()
+    local CombatFramework = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework"))
+    local CombatFrameworkR = getupvalues(CombatFramework)[2]
+    
+    function AttackFunction()
+        if not _G.Settings.FastAttack then return end
+        
+        local AC = CombatFrameworkR.activeController
+        if AC and AC.equipped then
+            local bladehit = {}
+            local Client = LocalPlayer
+            
+            -- Pegar Mobs próximos
+            for i, v in pairs(workspace.Enemies:GetChildren()) do
+                local Human = v:FindFirstChildOfClass("Humanoid")
+                if Human and Human.RootPart and Human.Health > 0 and Client:DistanceFromCharacter(Human.RootPart.Position) < 65 then
+                    table.insert(bladehit, Human.RootPart)
+                end
+            end
+            
+            if #bladehit > 0 then
+                pcall(function()
+                    ReplicatedStorage.RigControllerEvent:FireServer("weaponChange", AC.currentWeaponModel.Name)
+                    ReplicatedStorage.RigControllerEvent:FireServer("hit", bladehit, #bladehit, "")
+                end)
+            end
+        end
+    end
+    
+    while task.wait(_G.Settings.FastAttackDelay) do
+        if _G.Settings.FastAttack then
+            pcall(function()
+                AttackFunction()
+            end)
+        end
+    end
+end)
+
+-- Loop NoClip
+task.spawn(function()
+    RunService.Stepped:Connect(function()
+        if _G.Settings.AutoFarmLevel or _G.Settings.AutoFarmNearest or _G.Settings.NoClip then
+            for i, v in pairs(LocalPlayer.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end)
+end)
+
+-- Loop Anti-Água
+task.spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.Settings.AntiWater then
+                if LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    LocalPlayer.Character.Humanoid.Health = LocalPlayer.Character.Humanoid.MaxHealth
+                end
+            end
+        end)
+    end
+end)
+
+-- Loop Walk on Water
+task.spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.Settings.WalkOnWater then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+                    local position = humanoidRootPart.Position
+                    
+                    if position.Y < 1 then
+                        local newPosition = Vector3.new(position.X, 1, position.Z)
+                        humanoidRootPart.CFrame = CFrame.new(newPosition)
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- Loop Auto Stats
+task.spawn(function()
+    while task.wait() do
+        if _G.Settings.AutoStats then
+            pcall(function()
+                local Points = LocalPlayer.Data.Points.Value
+                
+                if Points > 0 then
+                    -- Distribuir pontos baseado nas configurações
+                    if _G.Settings.PointMelee > 0 then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Melee", _G.Settings.PointMelee)
+                    end
+                    
+                    if _G.Settings.PointDefense > 0 then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Defense", _G.Settings.PointDefense)
+                    end
+                    
+                    if _G.Settings.PointSword > 0 then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Sword", _G.Settings.PointSword)
+                    end
+                    
+                    if _G.Settings.PointGun > 0 then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Gun", _G.Settings.PointGun)
+                    end
+                    
+                    if _G.Settings.PointFruit > 0 then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Demon Fruit", _G.Settings.PointFruit)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop ESP Players
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Settings.ESPPlayer then
+            pcall(function()
+                for i, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character then
+                        CreateESP(player.Character, player.Name, Color3.new(1, 1, 1))
+                    end
+                end
+            end)
+        else
+            pcall(function()
+                for i, player in pairs(Players:GetPlayers()) do
+                    if player.Character then
+                        RemoveESP(player.Character)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop ESP Mobs
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Settings.ESPMob then
+            pcall(function()
+                for i, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") then
+                        CreateESP(v, v.Name, Color3.new(1, 0, 0))
+                    end
+                end
+            end)
+        else
+            pcall(function()
+                for i, v in pairs(workspace.Enemies:GetChildren()) do
+                    RemoveESP(v)
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop ESP Bosses
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Settings.ESPBoss then
+            pcall(function()
+                for i, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") and table.find(BossList, v.Name) then
+                        CreateESP(v, v.Name .. " [BOSS]", Color3.new(1, 0.5, 0))
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════════
+-- NOTIFICAÇÃO FINAL
+-- ═══════════════════════════════════════════════════════════════
+
+Fluent:Notify({
+    Title = "✅ Lag Teck Fusion V4.0 - COMPLETO",
+    Content = "Script carregado com sucesso!\n\n✅ Todas as funcionalidades operacionais\n✅ Auto Farm otimizado\n✅ Fast Attack sem lag\n✅ Bring Mobs funcionando\n✅ ESP ativo\n\n🎮 Divirta-se!",
+    Duration = 8
+})
+
+print("✅ SCRIPT COMPLETO CARREGADO COM SUCESSO!")
+print("═══════════════════════════════════════════════════════════════")
+print("    🌊 LAG TECK FUSION V4.0 - ULTIMATE EDITION")
+print("    Discord: discord.gg/RnZ6XHHFj7")
+print("    ✅ TODAS AS FUNCIONALIDADES ATIVAS!")
+print("═══════════════════════════════════════════════════════════════")
