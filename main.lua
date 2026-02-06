@@ -1,7 +1,7 @@
 --[[===================================================
-    LagTeck Hub - v1.3 DELTA iOS FIX
-    Sistema completo de Farm + TP
-    Blox Fruits | Mobile Optimized
+    LagTeck Hub - v2.0 ULTRA COMPLETO
+    Sistema completo corrigido
+    Blox Fruits | Delta iOS Optimized
 =====================================================]]--
 
 -- =========================
@@ -19,15 +19,8 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
-
--- Proteção para serviços que podem falhar
-local function SafeGetService(serviceName)
-    local success, service = pcall(function()
-        return game:GetService(serviceName)
-    end)
-    return success and service or nil
-end
 
 -- =========================
 -- VARIÁVEIS GLOBAIS
@@ -48,12 +41,27 @@ _G.Settings = {
     -- CONFIGURAÇÕES DE FARM
     WeaponType = "Nenhum",
     FarmDistance = 30,
-    KillAura = false,
     BringMobs = true,
+    
+    -- PLAYER
+    WalkOnWater = false,
+    RemoveFog = false,
+    AntiAFK = false,
+    
+    -- ESP
+    ESPFruit = false,
+    ESPIsland = false,
+    ESPPlayer = false,
+    ESPChest = false,
     
     -- TELEPORT
     SelectedIsland = nil,
-    SelectedSea = 1
+    SelectedSea = 1,
+    
+    -- SEA EVENT
+    AutoKatakuri = false,
+    AutoFactory = false,
+    AutoSeaBeast = false
 }
 
 -- =========================
@@ -161,7 +169,7 @@ local FruitList = {
 }
 
 -- =========================
--- COORDENADAS DAS ILHAS
+-- COORDENADAS COMPLETAS DAS ILHAS
 -- =========================
 local IslandPositions = {
     -- SEA 1
@@ -193,6 +201,7 @@ local IslandPositions = {
     ["Ice Castle"] = CFrame.new(5665, 88, -6155),
     ["Forgotten Island"] = CFrame.new(-3053, 240, -10145),
     ["Dark Arena"] = CFrame.new(3777, 91, -3000),
+    ["Usoaps Island"] = CFrame.new(4700, 8, 2997),
     
     -- SEA 3
     ["Port Town"] = CFrame.new(-290, 44, 5343),
@@ -201,7 +210,8 @@ local IslandPositions = {
     ["Castle on the Sea"] = CFrame.new(-5075, 314, -3155),
     ["Haunted Castle"] = CFrame.new(-9515, 142, 5566),
     ["Sea of Treats"] = CFrame.new(-2079, 252, -12375),
-    ["Tiki Outpost"] = CFrame.new(-16105, 9, 440)
+    ["Tiki Outpost"] = CFrame.new(-16105, 9, 440),
+    ["Floating Turtle"] = CFrame.new(-13274, 332, -7984)
 }
 
 local IslandsSea1 = {
@@ -214,63 +224,118 @@ local IslandsSea1 = {
 local IslandsSea2 = {
     "Kingdom of Rose", "Cafe", "Mansion", "Graveyard",
     "Snow Mountain", "Hot and Cold", "Cursed Ship", "Ice Castle",
-    "Forgotten Island", "Dark Arena"
+    "Forgotten Island", "Dark Arena", "Usoaps Island"
 }
 
 local IslandsSea3 = {
     "Port Town", "Hydra Island", "Great Tree", "Castle on the Sea",
-    "Haunted Castle", "Sea of Treats", "Tiki Outpost"
+    "Haunted Castle", "Sea of Treats", "Tiki Outpost", "Floating Turtle"
 }
 
 local CurrentIslands = Sea == 1 and IslandsSea1 or Sea == 2 and IslandsSea2 or IslandsSea3
 
 -- =========================
--- SISTEMA DE QUESTS
+-- SISTEMA DE QUESTS COMPLETO
 -- =========================
 local QuestData = {}
 
 if Sea == 1 then
     QuestData = {
-        [1] = {Quest = "BanditQuest1", QuestNum = 1, Mob = "Bandit", Pos = CFrame.new(1145, 17, 1634)},
-        [10] = {Quest = "JungleQuest", QuestNum = 1, Mob = "Monkey", Pos = CFrame.new(-1448, 50, 38)},
-        [15] = {Quest = "BuggyQuest1", QuestNum = 1, Mob = "Pirate", Pos = CFrame.new(-1103, 13, 3896)},
+        [1] = {Quest = "BanditQuest1", QuestNum = 1, Mob = "Bandit", Pos = CFrame.new(1059, 16, 1549)},
+        [10] = {Quest = "JungleQuest", QuestNum = 1, Mob = "Monkey", Pos = CFrame.new(-1601, 37, 152)},
+        [15] = {Quest = "BuggyQuest1", QuestNum = 1, Mob = "Pirate", Pos = CFrame.new(-1119, 5, 3831)},
         [30] = {Quest = "BuggyQuest2", QuestNum = 1, Mob = "Brute", Pos = CFrame.new(-1140, 15, 4312)},
-        [40] = {Quest = "DesertQuest", QuestNum = 1, Mob = "Desert Bandit", Pos = CFrame.new(945, 7, 4470)},
-        [60] = {Quest = "MarineQuest2", QuestNum = 1, Mob = "Chief Petty Officer", Pos = CFrame.new(-4881, 23, 4273)},
-        [75] = {Quest = "SnowQuest", QuestNum = 1, Mob = "Snowman", Pos = CFrame.new(1200, 105, -1318)},
-        [100] = {Quest = "SnowQuest2", QuestNum = 1, Mob = "Winter Warrior", Pos = CFrame.new(1200, 105, -1318)},
-        [120] = {Quest = "MarineQuest3", QuestNum = 1, Mob = "Marine Lieutenant", Pos = CFrame.new(-2994, 73, -3125)},
-        [150] = {Quest = "SkyExp1Quest", QuestNum = 1, Mob = "God's Guard", Pos = CFrame.new(-4970, 718, -2667)},
+        [40] = {Quest = "DesertQuest", QuestNum = 1, Mob = "Desert Bandit", Pos = CFrame.new(897, 6, 4388)},
+        [60] = {Quest = "DesertQuest", QuestNum = 2, Mob = "Desert Officer", Pos = CFrame.new(897, 6, 4388)},
+        [75] = {Quest = "SnowQuest", QuestNum = 1, Mob = "Snowman", Pos = CFrame.new(1386, 87, -1297)},
+        [90] = {Quest = "SnowQuest", QuestNum = 2, Mob = "Winter Warrior", Pos = CFrame.new(1386, 87, -1297)},
+        [100] = {Quest = "MarineQuest2", QuestNum = 1, Mob = "Chief Petty Officer", Pos = CFrame.new(-4881, 23, 4273)},
+        [120] = {Quest = "MarineQuest3", QuestNum = 1, Mob = "Marine Captain", Pos = CFrame.new(-2442, 73, -3219)},
+        [150] = {Quest = "SkyExp1Quest", QuestNum = 1, Mob = "God's Guard", Pos = CFrame.new(-4721, 845, -1954)},
         [175] = {Quest = "SkyExp1Quest", QuestNum = 2, Mob = "Shanda", Pos = CFrame.new(-7863, 5545, -380)},
         [190] = {Quest = "SkyExp2Quest", QuestNum = 1, Mob = "Royal Squad", Pos = CFrame.new(-7906, 5634, -1411)},
         [210] = {Quest = "SkyExp2Quest", QuestNum = 2, Mob = "Royal Soldier", Pos = CFrame.new(-7906, 5634, -1411)},
+        [225] = {Quest = "ColosseumQuest", QuestNum = 1, Mob = "Gladiator", Pos = CFrame.new(-1315, 8, -2976)},
         [250] = {Quest = "PrisonerQuest", QuestNum = 1, Mob = "Dangerous Prisoner", Pos = CFrame.new(4875, 6, 734)},
         [275] = {Quest = "PrisonerQuest", QuestNum = 2, Mob = "Toga Warrior", Pos = CFrame.new(4875, 6, 734)},
-        [300] = {Quest = "ColosseumQuest", QuestNum = 1, Mob = "Gladiator", Pos = CFrame.new(-1427, 7, -2926)},
-        [325] = {Quest = "ColosseumQuest", QuestNum = 2, Mob = "Military Soldier", Pos = CFrame.new(-1427, 7, -2926)},
-        [350] = {Quest = "MagmaQuest", QuestNum = 1, Mob = "Lava Pirate", Pos = CFrame.new(-5247, 12, 8504)},
-        [375] = {Quest = "MagmaQuest", QuestNum = 2, Mob = "Magma Admiral", Pos = CFrame.new(-5247, 12, 8504)},
-        [400] = {Quest = "FishmanQuest", QuestNum = 1, Mob = "Fishman Warrior", Pos = CFrame.new(61164, 18, 1609)},
-        [450] = {Quest = "FishmanQuest", QuestNum = 2, Mob = "Fishman Commando", Pos = CFrame.new(61164, 18, 1609)}
+        [300] = {Quest = "ColosseumQuest", QuestNum = 2, Mob = "Military Soldier", Pos = CFrame.new(-1315, 8, -2976)},
+        [325] = {Quest = "MagmaQuest", QuestNum = 1, Mob = "Lava Pirate", Pos = CFrame.new(-5234, 12, 8445)},
+        [350] = {Quest = "MagmaQuest", QuestNum = 2, Mob = "Magma Admiral", Pos = CFrame.new(-5234, 12, 8445)},
+        [375] = {Quest = "FishmanQuest", QuestNum = 1, Mob = "Fishman Warrior", Pos = CFrame.new(61122, 18, 1569)},
+        [400] = {Quest = "FishmanQuest", QuestNum = 2, Mob = "Fishman Commando", Pos = CFrame.new(61122, 18, 1569)},
+        [450] = {Quest = "SkyExp1Quest", QuestNum = 3, Mob = "God's Guard", Pos = CFrame.new(-4721, 845, -1954)}
     }
 elseif Sea == 2 then
     QuestData = {
         [700] = {Quest = "Area1Quest", QuestNum = 1, Mob = "Raider", Pos = CFrame.new(-428, 72, 1836)},
-        [775] = {Quest = "Area2Quest", QuestNum = 1, Mob = "Mercenary", Pos = CFrame.new(-972, 73, 1833)}
+        [725] = {Quest = "Area1Quest", QuestNum = 2, Mob = "Mercenary", Pos = CFrame.new(-428, 72, 1836)},
+        [775] = {Quest = "Area2Quest", QuestNum = 1, Mob = "Swan Pirate", Pos = CFrame.new(638, 73, 1194)},
+        [800] = {Quest = "Area2Quest", QuestNum = 2, Mob = "Factory Staff", Pos = CFrame.new(638, 73, 1194)},
+        [825] = {Quest = "MarineQuest3", QuestNum = 1, Mob = "Marine Lieutenant", Pos = CFrame.new(-2440, 73, -3217)},
+        [850] = {Quest = "MarineQuest3", QuestNum = 2, Mob = "Marine Captain", Pos = CFrame.new(-2440, 73, -3217)},
+        [875] = {Quest = "ZombieQuest", QuestNum = 1, Mob = "Zombie", Pos = CFrame.new(-5496, 48, -795)},
+        [900] = {Quest = "ZombieQuest", QuestNum = 2, Mob = "Vampire", Pos = CFrame.new(-5496, 48, -795)},
+        [950] = {Quest = "SnowMountainQuest", QuestNum = 1, Mob = "Winter Warrior", Pos = CFrame.new(604, 401, -5371)},
+        [975] = {Quest = "SnowMountainQuest", QuestNum = 2, Mob = "Lab Subordinate", Pos = CFrame.new(604, 401, -5371)},
+        [1000] = {Quest = "IceSideQuest", QuestNum = 1, Mob = "Horned Warrior", Pos = CFrame.new(-6078, 16, -4902)},
+        [1050] = {Quest = "IceSideQuest", QuestNum = 2, Mob = "Magma Ninja", Pos = CFrame.new(-6078, 16, -4902)},
+        [1100] = {Quest = "ShipQuest1", QuestNum = 1, Mob = "Pirate Millionaire", Pos = CFrame.new(971, 125, 32911)},
+        [1125] = {Quest = "ShipQuest1", QuestNum = 2, Mob = "Pistol Billionaire", Pos = CFrame.new(971, 125, 32911)},
+        [1150] = {Quest = "ShipQuest2", QuestNum = 1, Mob = "Dragon Crew Warrior", Pos = CFrame.new(971, 125, 32911)},
+        [1175] = {Quest = "ShipQuest2", QuestNum = 2, Mob = "Dragon Crew Archer", Pos = CFrame.new(971, 125, 32911)},
+        [1200] = {Quest = "FrostQuest", QuestNum = 1, Mob = "Snow Trooper", Pos = CFrame.new(5668, 28, -6484)},
+        [1225] = {Quest = "FrostQuest", QuestNum = 2, Mob = "Winter Warrior", Pos = CFrame.new(5668, 28, -6484)},
+        [1250] = {Quest = "ForgottenQuest", QuestNum = 1, Mob = "Sea Soldier", Pos = CFrame.new(-3053, 240, -10145)},
+        [1275] = {Quest = "ForgottenQuest", QuestNum = 2, Mob = "Water Fighter", Pos = CFrame.new(-3053, 240, -10145)},
+        [1300] = {Quest = "Area1Quest", QuestNum = 3, Mob = "Raider", Pos = CFrame.new(-428, 72, 1836)},
+        [1325] = {Quest = "Area2Quest", QuestNum = 3, Mob = "Swan Pirate", Pos = CFrame.new(638, 73, 1194)}
     }
 elseif Sea == 3 then
     QuestData = {
-        [1500] = {Quest = "PiratePortQuest", QuestNum = 1, Mob = "Pirate Millionaire", Pos = CFrame.new(-290, 44, 5580)}
+        [1500] = {Quest = "PiratePortQuest", QuestNum = 1, Mob = "Pirate Millionaire", Pos = CFrame.new(-290, 44, 5580)},
+        [1525] = {Quest = "PiratePortQuest", QuestNum = 2, Mob = "Pistol Billionaire", Pos = CFrame.new(-290, 44, 5580)},
+        [1575] = {Quest = "AmazonQuest", QuestNum = 1, Mob = "Amazon Warrior", Pos = CFrame.new(5832, 52, -1105)},
+        [1600] = {Quest = "AmazonQuest", QuestNum = 2, Mob = "Amazon Hunter", Pos = CFrame.new(5832, 52, -1105)},
+        [1625] = {Quest = "MarineTreeIsland", QuestNum = 1, Mob = "Marine Commodore", Pos = CFrame.new(2179, 29, -6737)},
+        [1675] = {Quest = "MarineTreeIsland", QuestNum = 2, Mob = "Marine Rear Admiral", Pos = CFrame.new(2179, 29, -6737)},
+        [1700] = {Quest = "DeepForestIsland", QuestNum = 1, Mob = "Mythological Pirate", Pos = CFrame.new(-13233, 332, -7625)},
+        [1725] = {Quest = "DeepForestIsland", QuestNum = 2, Mob = "Jungle Pirate", Pos = CFrame.new(-13233, 332, -7625)},
+        [1775] = {Quest = "DeepForestIsland2", QuestNum = 1, Mob = "Jungle Pirate", Pos = CFrame.new(-12680, 391, -9902)},
+        [1800] = {Quest = "DeepForestIsland3", QuestNum = 1, Mob = "Musketeer Pirate", Pos = CFrame.new(-13235, 332, -7624)},
+        [1825] = {Quest = "DeepForestIsland3", QuestNum = 2, Mob = "Reborn Skeleton", Pos = CFrame.new(-13235, 332, -7624)},
+        [1850] = {Quest = "DeepForestIsland3", QuestNum = 3, Mob = "Living Zombie", Pos = CFrame.new(-13235, 332, -7624)},
+        [1875] = {Quest = "DeepForestIsland4", QuestNum = 1, Mob = "Demonic Soul", Pos = CFrame.new(-9507, 172, 6158)},
+        [1900] = {Quest = "DeepForestIsland4", QuestNum = 2, Mob = "Posessed Mummy", Pos = CFrame.new(-9507, 172, 6158)},
+        [1925] = {Quest = "DeepForestIsland5", QuestNum = 1, Mob = "Peanut Scout", Pos = CFrame.new(-2103, 38, -10192)},
+        [1975] = {Quest = "DeepForestIsland5", QuestNum = 2, Mob = "Peanut President", Pos = CFrame.new(-2103, 38, -10192)},
+        [2000] = {Quest = "DeepForestIsland6", QuestNum = 1, Mob = "Ice Cream Chef", Pos = CFrame.new(-2103, 38, -10192)},
+        [2025] = {Quest = "DeepForestIsland6", QuestNum = 2, Mob = "Ice Cream Commander", Pos = CFrame.new(-2103, 38, -10192)},
+        [2050] = {Quest = "DeepForestIsland7", QuestNum = 1, Mob = "Cookie Crafter", Pos = CFrame.new(-2103, 38, -10192)},
+        [2075] = {Quest = "DeepForestIsland7", QuestNum = 2, Mob = "Cake Guard", Pos = CFrame.new(-2103, 38, -10192)},
+        [2100] = {Quest = "DeepForestIsland8", QuestNum = 1, Mob = "Baking Staff", Pos = CFrame.new(-2103, 38, -10192)},
+        [2125] = {Quest = "DeepForestIsland8", QuestNum = 2, Mob = "Head Baker", Pos = CFrame.new(-2103, 38, -10192)},
+        [2150] = {Quest = "DeepForestIsland9", QuestNum = 1, Mob = "Cocoa Warrior", Pos = CFrame.new(-2103, 38, -10192)},
+        [2175] = {Quest = "DeepForestIsland9", QuestNum = 2, Mob = "Chocolate Bar Battler", Pos = CFrame.new(-2103, 38, -10192)},
+        [2200] = {Quest = "DeepForestIsland10", QuestNum = 1, Mob = "Sweet Thief", Pos = CFrame.new(-2103, 38, -10192)},
+        [2225] = {Quest = "DeepForestIsland10", QuestNum = 2, Mob = "Candy Rebel", Pos = CFrame.new(-2103, 38, -10192)},
+        [2250] = {Quest = "DeepForestIsland11", QuestNum = 1, Mob = "Candy Pirate", Pos = CFrame.new(-2103, 38, -10192)},
+        [2275] = {Quest = "DeepForestIsland11", QuestNum = 2, Mob = "Sweet Thief", Pos = CFrame.new(-2103, 38, -10192)},
+        [2300] = {Quest = "DeepForestIsland12", QuestNum = 1, Mob = "Cocoa Warrior", Pos = CFrame.new(-2103, 38, -10192)},
+        [2325] = {Quest = "DeepForestIsland12", QuestNum = 2, Mob = "Chocolate Bar Battler", Pos = CFrame.new(-2103, 38, -10192)}
     }
 end
 
 local function GetQuestByLevel(level)
     local selectedQuest = nil
+    local maxLevel = 0
+    
     for lvl, quest in pairs(QuestData) do
-        if level >= lvl then
+        if level >= lvl and lvl > maxLevel then
             selectedQuest = quest
+            maxLevel = lvl
         end
     end
+    
     return selectedQuest
 end
 
@@ -375,6 +440,245 @@ local function ActivateBuso()
 end
 
 -- =========================
+-- WALK ON WATER
+-- =========================
+task.spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.Settings.WalkOnWater then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v.Name == "Water" and v:IsA("BasePart") then
+                            v.CanCollide = true
+                        end
+                    end
+                end
+            else
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v.Name == "Water" and v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- REMOVE FOG
+-- =========================
+task.spawn(function()
+    while task.wait() do
+        pcall(function()
+            if _G.Settings.RemoveFog then
+                Lighting.FogEnd = 100000
+                Lighting.FogStart = 0
+            else
+                Lighting.FogEnd = 2500
+                Lighting.FogStart = 0
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- ESP FRUTAS
+-- =========================
+local FruitESPs = {}
+
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            if _G.Settings.ESPFruit then
+                for _, fruit in pairs(workspace:GetChildren()) do
+                    if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") and not FruitESPs[fruit] then
+                        local billboard = Instance.new("BillboardGui", fruit.Handle)
+                        billboard.Size = UDim2.new(0, 100, 0, 50)
+                        billboard.AlwaysOnTop = true
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
+                        local label = Instance.new("TextLabel", billboard)
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.new(1, 1, 1)
+                        label.Font = Enum.Font.GothamBold
+                        label.TextSize = 14
+                        label.TextStrokeTransparency = 0
+                        
+                        FruitESPs[fruit] = billboard
+                        
+                        task.spawn(function()
+                            while fruit and fruit.Parent and _G.Settings.ESPFruit do
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - fruit.Handle.Position).Magnitude
+                                label.Text = fruit.Name .. "\n" .. math.floor(distance) .. "m"
+                                task.wait(0.5)
+                            end
+                        end)
+                    end
+                end
+            else
+                for fruit, billboard in pairs(FruitESPs) do
+                    if billboard then
+                        billboard:Destroy()
+                    end
+                end
+                FruitESPs = {}
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- ESP ILHAS
+-- =========================
+local IslandESPs = {}
+
+task.spawn(function()
+    while task.wait(2) do
+        pcall(function()
+            if _G.Settings.ESPIsland then
+                for name, cframe in pairs(IslandPositions) do
+                    if not IslandESPs[name] then
+                        local part = Instance.new("Part", workspace)
+                        part.Anchored = true
+                        part.CanCollide = false
+                        part.Transparency = 1
+                        part.Size = Vector3.new(1, 1, 1)
+                        part.CFrame = cframe
+                        
+                        local billboard = Instance.new("BillboardGui", part)
+                        billboard.Size = UDim2.new(0, 100, 0, 50)
+                        billboard.AlwaysOnTop = true
+                        billboard.StudsOffset = Vector3.new(0, 10, 0)
+                        
+                        local label = Instance.new("TextLabel", billboard)
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.new(1, 1, 1)
+                        label.Font = Enum.Font.GothamBold
+                        label.TextSize = 16
+                        label.TextStrokeTransparency = 0
+                        
+                        IslandESPs[name] = {part = part, billboard = billboard, label = label}
+                        
+                        task.spawn(function()
+                            while part and part.Parent and _G.Settings.ESPIsland do
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - part.Position).Magnitude
+                                label.Text = name .. "\n" .. math.floor(distance) .. "m"
+                                task.wait(1)
+                            end
+                        end)
+                    end
+                end
+            else
+                for name, data in pairs(IslandESPs) do
+                    if data.part then
+                        data.part:Destroy()
+                    end
+                end
+                IslandESPs = {}
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- ESP PLAYER
+-- =========================
+local PlayerESPs = {}
+
+task.spawn(function()
+    while task.wait(0.5) do
+        pcall(function()
+            if _G.Settings.ESPPlayer then
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and not PlayerESPs[player] then
+                        local billboard = Instance.new("BillboardGui", player.Character.HumanoidRootPart)
+                        billboard.Size = UDim2.new(0, 100, 0, 50)
+                        billboard.AlwaysOnTop = true
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
+                        local label = Instance.new("TextLabel", billboard)
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.new(1, 1, 1)
+                        label.Font = Enum.Font.GothamBold
+                        label.TextSize = 14
+                        label.TextStrokeTransparency = 0
+                        
+                        PlayerESPs[player] = billboard
+                        
+                        task.spawn(function()
+                            while player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and _G.Settings.ESPPlayer do
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                                label.Text = player.Name .. "\n" .. math.floor(distance) .. "m"
+                                task.wait(0.5)
+                            end
+                        end)
+                    end
+                end
+            else
+                for player, billboard in pairs(PlayerESPs) do
+                    if billboard then
+                        billboard:Destroy()
+                    end
+                end
+                PlayerESPs = {}
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- ESP CHEST (BERRY)
+-- =========================
+local ChestESPs = {}
+
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            if _G.Settings.ESPChest then
+                for _, chest in pairs(workspace:GetChildren()) do
+                    if chest.Name:find("Chest") and (chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")) and not ChestESPs[chest] then
+                        local chestPart = chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")
+                        
+                        local billboard = Instance.new("BillboardGui", chestPart)
+                        billboard.Size = UDim2.new(0, 100, 0, 50)
+                        billboard.AlwaysOnTop = true
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
+                        local label = Instance.new("TextLabel", billboard)
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.new(1, 1, 1)
+                        label.Font = Enum.Font.GothamBold
+                        label.TextSize = 14
+                        label.TextStrokeTransparency = 0
+                        
+                        ChestESPs[chest] = billboard
+                        
+                        task.spawn(function()
+                            while chest and chest.Parent and _G.Settings.ESPChest do
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude
+                                label.Text = "Chest 💰\n" .. math.floor(distance) .. "m"
+                                task.wait(0.5)
+                            end
+                        end)
+                    end
+                end
+            else
+                for chest, billboard in pairs(ChestESPs) do
+                    if billboard then
+                        billboard:Destroy()
+                    end
+                end
+                ChestESPs = {}
+            end
+        end)
+    end
+end)
+
+-- =========================
 -- FAST ATTACK LOOP
 -- =========================
 task.spawn(function()
@@ -391,7 +695,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- AUTO FARM LEVEL LOOP (CORRIGIDO - SEM DUPLICAÇÃO)
+-- AUTO FARM LEVEL LOOP (CORRIGIDO)
 -- =========================
 task.spawn(function()
     while task.wait(0.5) do
@@ -406,10 +710,14 @@ task.spawn(function()
                 local myLevel = LocalPlayer.Data.Level.Value
                 local questInfo = GetQuestByLevel(myLevel)
                 
-                if not questInfo then return end
+                if not questInfo then 
+                    warn("⚠️ Quest não encontrada para level " .. myLevel)
+                    return 
+                end
                 
                 local questGui = LocalPlayer.PlayerGui.Main.Quest
                 
+                -- Pegar quest se não estiver ativa
                 if not questGui.Visible then
                     repeat
                         TP(questInfo.Pos)
@@ -425,6 +733,7 @@ task.spawn(function()
                     end
                 end
                 
+                -- Farmar mob
                 if _G.Settings.AutoFarmLevel then
                     for _, mob in pairs(workspace.Enemies:GetChildren()) do
                         if mob.Name == questInfo.Mob and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
@@ -440,16 +749,23 @@ task.spawn(function()
                                 task.wait()
                                 
                                 if not _G.Settings.AutoFarmLevel then break end
+                                if not mob or not mob.Parent or mob.Humanoid.Health <= 0 then break end
                                 
+                                -- Bring mob
                                 if _G.Settings.BringMobs then
-                                    mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
-                                    mob.HumanoidRootPart.Transparency = 1
-                                    mob.Humanoid.WalkSpeed = 0
-                                    mob.Humanoid.JumpPower = 0
-                                    mob.HumanoidRootPart.CanCollide = false
+                                    pcall(function()
+                                        mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
+                                        mob.HumanoidRootPart.Transparency = 1
+                                        mob.Humanoid.WalkSpeed = 0
+                                        mob.Humanoid.JumpPower = 0
+                                        mob.HumanoidRootPart.CanCollide = false
+                                    end)
                                 end
                                 
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.FarmDistance, 0)
+                                -- TP pro mob
+                                pcall(function()
+                                    LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.FarmDistance, 0)
+                                end)
                                 
                                 _G.Settings.FastAttack = true
                                 
@@ -598,6 +914,21 @@ task.spawn(function()
 end)
 
 -- =========================
+-- TELEPORT PARA OUTRO SEA
+-- =========================
+local function TeleportToSea(seaNumber)
+    local placeIds = {
+        [1] = 2753915549,
+        [2] = 4442272183,
+        [3] = 7449423635
+    }
+    
+    if placeIds[seaNumber] then
+        game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+    end
+end
+
+-- =========================
 -- GUI (MOBILE OPTIMIZED)
 -- =========================
 local Gui = Instance.new("ScreenGui")
@@ -668,11 +999,11 @@ TopCorner.CornerRadius = UDim.new(0, 16)
 local Title = Instance.new("TextLabel", Top)
 Title.Size = UDim2.new(1, -140, 1, 0)
 Title.Position = UDim2.fromOffset(10, 0)
-Title.Text = "Lag Teck Hub"
+Title.Text = "Lag Teck Hub v2.0"
 Title.TextColor3 = Config.Tema.Texto
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local SeaLabel = Instance.new("TextLabel", Top)
@@ -764,7 +1095,7 @@ local function CriarAba(nome)
     Btn.TextColor3 = Config.Tema.Texto
     Btn.BorderSizePixel = 0
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 11
+    Btn.TextSize = 10
     Btn.AutoButtonColor = false
 
     local BtnCorner = Instance.new("UICorner", Btn)
@@ -819,7 +1150,7 @@ local function Toggle(parent, texto, callback)
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 12
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.TextWrapped = true
 
@@ -879,7 +1210,7 @@ local function Dropdown(parent, texto, options, callback)
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 11
+    Label.TextSize = 10
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.TextWrapped = true
 
@@ -891,7 +1222,7 @@ local function Dropdown(parent, texto, options, callback)
     Btn.BackgroundTransparency = 0.2
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 10
+    Btn.TextSize = 9
     Btn.BorderSizePixel = 0
     Btn.TextTruncate = Enum.TextTruncate.AtEnd
     
@@ -934,7 +1265,7 @@ local function Dropdown(parent, texto, options, callback)
         OptBtn.BackgroundColor3 = Config.Tema.Botao
         OptBtn.TextColor3 = Config.Tema.Texto
         OptBtn.Font = Enum.Font.Gotham
-        OptBtn.TextSize = 10
+        OptBtn.TextSize = 9
         OptBtn.BorderSizePixel = 0
         OptBtn.TextTruncate = Enum.TextTruncate.AtEnd
         
@@ -958,7 +1289,7 @@ local function Button(parent, texto, callback)
     Btn.BackgroundTransparency = 0.3
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 13
+    Btn.TextSize = 12
     Btn.BorderSizePixel = 0
     
     local BtnCorner = Instance.new("UICorner", Btn)
@@ -973,7 +1304,7 @@ end
 
 local function Section(parent, texto)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1, 0, 0, 40)
+    Box.Size = UDim2.new(1, 0, 0, 38)
     Box.BackgroundColor3 = Config.Tema.AzulClaro
     Box.BackgroundTransparency = 0.5
     Box.BorderSizePixel = 0
@@ -995,10 +1326,11 @@ end
 -- CRIANDO ABAS
 -- =========================
 local FarmTab = CriarAba("🌴 Farm")
-local CombatTab = CriarAba("⚔️ Combat")
 local FruitTab = CriarAba("🍏 Frutas")
 local TeleportTab = CriarAba("🧭 TP")
-local PlayerTab = CriarAba("🛡️ Player")
+local SeaEventTab = CriarAba("🦈 Sea Event")
+local ESPTab = CriarAba("👁️ ESP")
+local PlayerTab = CriarAba("🛡️ Config")
 
 Tabs["🌴 Farm"].Frame.Visible = true
 Tween(Tabs["🌴 Farm"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
@@ -1042,14 +1374,11 @@ Toggle(FarmTab, "Auto Chest", function(v)
     _G.Settings.AutoChest = v
 end)
 
--- =========================
--- ABA COMBAT
--- =========================
-Toggle(CombatTab, "Fast Attack", function(v)
+Toggle(FarmTab, "Fast Attack", function(v)
     _G.Settings.FastAttack = v
 end)
 
-Toggle(CombatTab, "Auto Haki", function(v)
+Toggle(FarmTab, "Auto Haki", function(v)
     _G.Settings.AutoHaki = v
 end)
 
@@ -1114,7 +1443,7 @@ end)
 -- =========================
 -- ABA TELEPORT
 -- =========================
-Section(TeleportTab, "Selecionar Sea")
+Section(TeleportTab, "Mudar de Sea")
 
 local SeaFrame = Instance.new("Frame", TeleportTab)
 SeaFrame.Size = UDim2.new(1, 0, 0, 55)
@@ -1141,7 +1470,10 @@ for i = 1, 3 do
     
     SeaBtn.MouseButton1Click:Connect(function()
         if Sea ~= i then
-            warn("⚠️ Você está no SEA " .. Sea)
+            print("🚀 Teleportando para SEA " .. i .. "...")
+            TeleportToSea(i)
+        else
+            print("✅ Você já está no SEA " .. i)
         end
     end)
 end
@@ -1165,9 +1497,60 @@ Button(TeleportTab, "🚀 TELEPORTAR", function()
 end)
 
 -- =========================
--- ABA PLAYER
+-- ABA SEA EVENT
 -- =========================
+Section(SeaEventTab, "Sea 2 Events")
+
+Toggle(SeaEventTab, "Auto Katakuri", function(v)
+    _G.Settings.AutoKatakuri = v
+end)
+
+Toggle(SeaEventTab, "Auto Factory", function(v)
+    _G.Settings.AutoFactory = v
+end)
+
+Section(SeaEventTab, "Todos os Seas")
+
+Toggle(SeaEventTab, "Auto Sea Beast", function(v)
+    _G.Settings.AutoSeaBeast = v
+end)
+
+-- =========================
+-- ABA ESP
+-- =========================
+Section(ESPTab, "ESP Visual")
+
+Toggle(ESPTab, "ESP Frutas", function(v)
+    _G.Settings.ESPFruit = v
+end)
+
+Toggle(ESPTab, "ESP Ilhas", function(v)
+    _G.Settings.ESPIsland = v
+end)
+
+Toggle(ESPTab, "ESP Players", function(v)
+    _G.Settings.ESPPlayer = v
+end)
+
+Toggle(ESPTab, "ESP Chest (Berry)", function(v)
+    _G.Settings.ESPChest = v
+end)
+
+-- =========================
+-- ABA CONFIG (PLAYER)
+-- =========================
+Section(PlayerTab, "Configurações do Player")
+
+Toggle(PlayerTab, "Andar na Água", function(v)
+    _G.Settings.WalkOnWater = v
+end)
+
+Toggle(PlayerTab, "Remover Neblina", function(v)
+    _G.Settings.RemoveFog = v
+end)
+
 Toggle(PlayerTab, "Anti AFK", function(v)
+    _G.Settings.AntiAFK = v
     if v then
         LocalPlayer.Idled:Connect(function()
             VirtualUser:CaptureController()
@@ -1237,9 +1620,13 @@ end
 -- INIT
 -- =========================
 task.wait(1)
-print("🚀 Lag Teck Hub v1.3 DELTA iOS")
+print("🚀 Lag Teck Hub v2.0 ULTRA")
 print("✅ Sea:", Sea)
 print("📱 Mobile:", IsMobile())
-print("🎯 Status: OK")
+print("🎯 Sistema: CORRIGIDO")
+print("💧 Andar na água: DISPONÍVEL")
+print("🌫️ Remover neblina: DISPONÍVEL")
+print("👁️ ESP: COMPLETO")
+print("📍 Teleport Sea: FUNCIONAL")
 
 OpenHub()
