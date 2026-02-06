@@ -1,8 +1,15 @@
 --[[===================================================
-    LagTeck Hub - v1.2 CORRIGIDO
-    Sistema completo de Farm + TP funcionando
-    Blox Fruits | Mobile + PC
+    LagTeck Hub - v1.3 DELTA iOS FIX
+    Sistema completo de Farm + TP
+    Blox Fruits | Mobile Optimized
 =====================================================]]--
+
+-- =========================
+-- PROTEÇÃO MOBILE
+-- =========================
+local function IsMobile()
+    return game:GetService("UserInputService").TouchEnabled
+end
 
 -- =========================
 -- SERVIÇOS
@@ -13,6 +20,14 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
+
+-- Proteção para serviços que podem falhar
+local function SafeGetService(serviceName)
+    local success, service = pcall(function()
+        return game:GetService(serviceName)
+    end)
+    return success and service or nil
+end
 
 -- =========================
 -- VARIÁVEIS GLOBAIS
@@ -31,7 +46,7 @@ _G.Settings = {
     AutoRandomFruit = false,
     
     -- CONFIGURAÇÕES DE FARM
-    WeaponType = "Nenhum", -- Estilo de Luta, Espada, Arma, Fruta
+    WeaponType = "Nenhum",
     FarmDistance = 30,
     KillAura = false,
     BringMobs = true,
@@ -45,11 +60,12 @@ _G.Settings = {
 -- DETECÇÃO DO SEA
 -- =========================
 local function GetCurrentSea()
-    if game.PlaceId == 2753915549 then
+    local placeId = game.PlaceId
+    if placeId == 2753915549 then
         return 1
-    elseif game.PlaceId == 4442272183 then
+    elseif placeId == 4442272183 then
         return 2
-    elseif game.PlaceId == 7449423635 then
+    elseif placeId == 7449423635 then
         return 3
     end
     return 1
@@ -188,7 +204,6 @@ local IslandPositions = {
     ["Tiki Outpost"] = CFrame.new(-16105, 9, 440)
 }
 
--- Lista de ilhas por Sea
 local IslandsSea1 = {
     "Pirate Starter", "Marine Starter", "Jungle", "Pirate Village",
     "Desert", "Frozen Village", "Marine Fortress", "Sky Island 1",
@@ -214,7 +229,6 @@ local CurrentIslands = Sea == 1 and IslandsSea1 or Sea == 2 and IslandsSea2 or I
 -- =========================
 local QuestData = {}
 
--- SEA 1 QUESTS
 if Sea == 1 then
     QuestData = {
         [1] = {Quest = "BanditQuest1", QuestNum = 1, Mob = "Bandit", Pos = CFrame.new(1145, 17, 1634)},
@@ -264,31 +278,48 @@ end
 -- FUNÇÕES CORE
 -- =========================
 local function Tween(obj, time, props)
-    local tween = TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Linear), props)
-    tween:Play()
-    return tween
+    local success, tween = pcall(function()
+        return TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Linear), props)
+    end)
+    
+    if success and tween then
+        tween:Play()
+        return tween
+    end
+    return nil
 end
 
 local function TP(cframe)
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
+    local success = pcall(function()
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            return
+        end
+        
+        local char = LocalPlayer.Character
+        local hrp = char.HumanoidRootPart
+        
+        local distance = (hrp.Position - cframe.Position).Magnitude
+        
+        if distance < 250 then
+            hrp.CFrame = cframe
+        else
+            local tween = Tween(hrp, distance/300, {CFrame = cframe})
+            if tween then
+                tween.Completed:Wait()
+            end
+        end
+    end)
     
-    local char = LocalPlayer.Character
-    local hrp = char.HumanoidRootPart
-    
-    local distance = (hrp.Position - cframe.Position).Magnitude
-    
-    if distance < 250 then
-        hrp.CFrame = cframe
-    else
-        local tween = Tween(hrp, distance/300, {CFrame = cframe})
-        tween.Completed:Wait()
+    if not success then
+        warn("❌ Erro ao teleportar")
     end
 end
 
 local function GetRemote()
-    return ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+    local success, remote = pcall(function()
+        return ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("CommF_", 5)
+    end)
+    return success and remote or nil
 end
 
 local function EquipWeapon()
@@ -296,7 +327,7 @@ local function EquipWeapon()
         return false
     end
     
-    pcall(function()
+    local success = pcall(function()
         local weaponMap = {
             ["Estilo de Luta"] = "Melee",
             ["Espada"] = "Sword",
@@ -315,7 +346,6 @@ local function EquipWeapon()
             end
         end
         
-        -- Se não achou no backpack, procura equipado
         for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
             if tool:IsA("Tool") and tool.ToolTip == targetType then
                 return true
@@ -323,7 +353,7 @@ local function EquipWeapon()
         end
     end)
     
-    return false
+    return success
 end
 
 local function Click()
@@ -334,16 +364,21 @@ local function Click()
 end
 
 local function ActivateBuso()
-    if not LocalPlayer.Character:FindFirstChild("HasBuso") then
-        GetRemote():InvokeServer("Buso")
-    end
+    pcall(function()
+        if not LocalPlayer.Character:FindFirstChild("HasBuso") then
+            local remote = GetRemote()
+            if remote then
+                remote:InvokeServer("Buso")
+            end
+        end
+    end)
 end
 
 -- =========================
 -- FAST ATTACK LOOP
 -- =========================
-spawn(function()
-    while task.wait() do
+task.spawn(function()
+    while task.wait(0.1) do
         if _G.Settings.FastAttack then
             pcall(function()
                 Click()
@@ -356,12 +391,11 @@ spawn(function()
 end)
 
 -- =========================
--- AUTO FARM LEVEL LOOP
+-- AUTO FARM LEVEL LOOP (CORRIGIDO - SEM DUPLICAÇÃO)
 -- =========================
-spawn(function()
-    while task.wait() do
+task.spawn(function()
+    while task.wait(0.5) do
         if _G.Settings.AutoFarmLevel then
-            -- Valida se selecionou arma
             if _G.Settings.WeaponType == "Nenhum" then
                 warn("⚠️ SELECIONE UM TIPO DE ARMA ANTES DE FARMAR!")
                 _G.Settings.AutoFarmLevel = false
@@ -383,13 +417,16 @@ spawn(function()
                     until (LocalPlayer.Character.HumanoidRootPart.Position - questInfo.Pos.Position).Magnitude < 10 or not _G.Settings.AutoFarmLevel
                     
                     if _G.Settings.AutoFarmLevel then
-                        GetRemote():InvokeServer("StartQuest", questInfo.Quest, questInfo.QuestNum)
-                        task.wait(1)
+                        local remote = GetRemote()
+                        if remote then
+                            remote:InvokeServer("StartQuest", questInfo.Quest, questInfo.QuestNum)
+                            task.wait(1)
+                        end
                     end
                 end
                 
                 if _G.Settings.AutoFarmLevel then
-                    for _, mob in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                    for _, mob in pairs(workspace.Enemies:GetChildren()) do
                         if mob.Name == questInfo.Mob and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                             
                             local weaponEquipped = EquipWeapon()
@@ -428,73 +465,15 @@ spawn(function()
         end
     end
 end)
-            pcall(function()
-                local myLevel = LocalPlayer.Data.Level.Value
-                local questInfo = GetQuestByLevel(myLevel)
-                
-                if not questInfo then return end
-                
-                -- Verifica se tem a quest ativa
-                local questGui = LocalPlayer.PlayerGui.Main.Quest
-                
-                if not questGui.Visible then
-                    -- Pega a quest
-                    repeat
-                        TP(questInfo.Pos)
-                        task.wait(0.5)
-                    until (LocalPlayer.Character.HumanoidRootPart.Position - questInfo.Pos.Position).Magnitude < 10 or not _G.Settings.AutoFarmLevel
-                    
-                    if _G.Settings.AutoFarmLevel then
-                        GetRemote():InvokeServer("StartQuest", questInfo.Quest, questInfo.QuestNum)
-                        task.wait(1)
-                    end
-                end
-                
-                -- Procura e ataca o mob
-                if _G.Settings.AutoFarmLevel then
-                    for _, mob in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        if mob.Name == questInfo.Mob and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
-                            repeat
-                                task.wait()
-                                
-                                if not _G.Settings.AutoFarmLevel then break end
-                                
-                                EquipWeapon()
-                                
-                                -- Bring mob
-                                mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
-                                mob.HumanoidRootPart.Transparency = 1
-                                mob.Humanoid.WalkSpeed = 0
-                                mob.Humanoid.JumpPower = 0
-                                mob.HumanoidRootPart.CanCollide = false
-                                
-                                -- Teleporta pro mob
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
-                                
-                                -- Ativa ataque
-                                _G.Settings.FastAttack = true
-                                
-                            until not mob.Parent or mob.Humanoid.Health <= 0 or not _G.Settings.AutoFarmLevel or not questGui.Visible
-                            
-                            _G.Settings.FastAttack = false
-                        end
-                    end
-                end
-            end)
-        else
-            _G.Settings.FastAttack = false
-        end
-    end
-end)
 
 -- =========================
 -- AUTO FARM BOSS LOOP
 -- =========================
-spawn(function()
-    while task.wait() do
+task.spawn(function()
+    while task.wait(0.5) do
         if _G.Settings.AutoFarmBoss then
             pcall(function()
-                for _, boss in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                for _, boss in pairs(workspace.Enemies:GetChildren()) do
                     if boss:FindFirstChild("Humanoid") and boss:FindFirstChild("HumanoidRootPart") and boss.Humanoid.Health > 0 then
                         if _G.Settings.SelectedBoss == "All" or boss.Name == _G.Settings.SelectedBoss then
                             repeat
@@ -528,11 +507,11 @@ end)
 -- =========================
 -- AUTO CHEST LOOP
 -- =========================
-spawn(function()
-    while task.wait(0.5) do
+task.spawn(function()
+    while task.wait(1) do
         if _G.Settings.AutoChest then
             pcall(function()
-                for _, chest in pairs(game:GetService("Workspace"):GetChildren()) do
+                for _, chest in pairs(workspace:GetChildren()) do
                     if chest.Name:find("Chest") and (chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")) then
                         local chestPart = chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")
                         
@@ -550,11 +529,11 @@ end)
 -- =========================
 -- FRUIT SNIPER
 -- =========================
-spawn(function()
+task.spawn(function()
     while task.wait(1) do
         if _G.Settings.AutoFruitSniper then
             pcall(function()
-                for _, fruit in pairs(game:GetService("Workspace"):GetChildren()) do
+                for _, fruit in pairs(workspace:GetChildren()) do
                     if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
                         TP(fruit.Handle.CFrame)
                         task.wait(0.5)
@@ -568,14 +547,17 @@ end)
 -- =========================
 -- AUTO STORE FRUIT
 -- =========================
-spawn(function()
+task.spawn(function()
     while task.wait(2) do
         if _G.Settings.AutoStoreFruit then
             pcall(function()
                 for _, fruit in pairs(LocalPlayer.Backpack:GetChildren()) do
                     if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
-                        GetRemote():InvokeServer("StoreFruit", fruit:GetAttribute("OriginalName"), LocalPlayer.Backpack[fruit.Name])
-                        task.wait(0.5)
+                        local remote = GetRemote()
+                        if remote then
+                            remote:InvokeServer("StoreFruit", fruit:GetAttribute("OriginalName"), LocalPlayer.Backpack[fruit.Name])
+                            task.wait(0.5)
+                        end
                     end
                 end
             end)
@@ -586,11 +568,14 @@ end)
 -- =========================
 -- AUTO BUY FRUIT
 -- =========================
-spawn(function()
+task.spawn(function()
     while task.wait(10) do
         if _G.Settings.AutoBuyFruit then
             pcall(function()
-                GetRemote():InvokeServer("PurchaseRawFruit", _G.Settings.SelectedFruit, false)
+                local remote = GetRemote()
+                if remote then
+                    remote:InvokeServer("PurchaseRawFruit", _G.Settings.SelectedFruit, false)
+                end
             end)
         end
     end
@@ -599,118 +584,137 @@ end)
 -- =========================
 -- AUTO RANDOM FRUIT
 -- =========================
-spawn(function()
+task.spawn(function()
     while task.wait(2) do
         if _G.Settings.AutoRandomFruit then
             pcall(function()
-                GetRemote():InvokeServer("Cousin", "Buy")
+                local remote = GetRemote()
+                if remote then
+                    remote:InvokeServer("Cousin", "Buy")
+                end
             end)
         end
     end
 end)
 
 -- =========================
--- GUI
+-- GUI (MOBILE OPTIMIZED)
 -- =========================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "LagTeckHub"
 Gui.ResetOnSpawn = false
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.IgnoreGuiInset = true
 
 pcall(function()
     game:GetService("CoreGui"):FindFirstChild("LagTeckHub"):Destroy()
 end)
 
-Gui.Parent = game:GetService("CoreGui")
+local success, parent = pcall(function()
+    return game:GetService("CoreGui")
+end)
+
+if not success then
+    parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+Gui.Parent = parent
 
 -- =========================
--- BOLINHA
+-- BOLINHA (MOBILE FRIENDLY)
 -- =========================
 local Bubble = Instance.new("ImageButton", Gui)
-Bubble.Size = UDim2.fromOffset(60,60)
-Bubble.Position = UDim2.fromScale(0.05,0.5)
+Bubble.Size = UDim2.fromOffset(70, 70)
+Bubble.Position = UDim2.new(0.05, 0, 0.5, -35)
 Bubble.Image = "rbxassetid://118708232212462"
 Bubble.BackgroundColor3 = Config.Tema.Botao
 Bubble.BorderSizePixel = 0
 Bubble.Active = true
 Bubble.Draggable = true
 Bubble.ScaleType = Enum.ScaleType.Fit
+Bubble.ZIndex = 999
 
-Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1,0)
+local BubbleCorner = Instance.new("UICorner", Bubble)
+BubbleCorner.CornerRadius = UDim.new(1, 0)
 
 -- =========================
--- MAIN WINDOW
+-- MAIN WINDOW (MOBILE SIZE)
 -- =========================
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromScale(0,0)
-Main.Position = UDim2.fromScale(0.5,0.5)
-Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.Size = UDim2.fromScale(0, 0)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.BackgroundColor3 = Config.Tema.Fundo
 Main.BackgroundTransparency = 0.35
 Main.BorderSizePixel = 0
 Main.Visible = false
+Main.ZIndex = 1000
 
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,16)
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 16)
 
 -- =========================
 -- TOP BAR
 -- =========================
 local Top = Instance.new("Frame", Main)
-Top.Size = UDim2.new(1,0,0,45)
+Top.Size = UDim2.new(1, 0, 0, 50)
 Top.BackgroundColor3 = Config.Tema.Secundario
 Top.BackgroundTransparency = 0.2
 Top.BorderSizePixel = 0
 
-Instance.new("UICorner", Top).CornerRadius = UDim.new(0,16)
+local TopCorner = Instance.new("UICorner", Top)
+TopCorner.CornerRadius = UDim.new(0, 16)
 
 local Title = Instance.new("TextLabel", Top)
-Title.Size = UDim2.new(1,-80,1,0)
-Title.Position = UDim2.fromOffset(10,0)
-Title.Text = "Lag Teck"
+Title.Size = UDim2.new(1, -140, 1, 0)
+Title.Position = UDim2.fromOffset(10, 0)
+Title.Text = "Lag Teck Hub"
 Title.TextColor3 = Config.Tema.Texto
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local SeaLabel = Instance.new("TextLabel", Top)
-SeaLabel.Size = UDim2.fromOffset(80,35)
+SeaLabel.Size = UDim2.fromOffset(80, 35)
 SeaLabel.Position = UDim2.new(1, -120, 0.5, -17.5)
 SeaLabel.Text = "SEA " .. Sea
-SeaLabel.TextColor3 = Color3.new(1,1,1)
+SeaLabel.TextColor3 = Color3.new(1, 1, 1)
 SeaLabel.BackgroundColor3 = Config.Tema.Ativo
 SeaLabel.Font = Enum.Font.GothamBold
-SeaLabel.TextSize = 14
+SeaLabel.TextSize = 13
 SeaLabel.BorderSizePixel = 0
 
-Instance.new("UICorner", SeaLabel).CornerRadius = UDim.new(0, 8)
+local SeaCorner = Instance.new("UICorner", SeaLabel)
+SeaCorner.CornerRadius = UDim.new(0, 8)
 
 local CloseBtn = Instance.new("TextButton", Top)
 CloseBtn.Size = UDim2.fromOffset(35, 35)
 CloseBtn.Position = UDim2.new(1, -40, 0.5, -17.5)
 CloseBtn.Text = "✕"
-CloseBtn.TextSize = 18
+CloseBtn.TextSize = 16
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.BorderSizePixel = 0
 
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+local CloseCorner = Instance.new("UICorner", CloseBtn)
+CloseCorner.CornerRadius = UDim.new(0, 8)
 
 -- =========================
 -- BODY
 -- =========================
 local Body = Instance.new("Frame", Main)
-Body.Position = UDim2.fromOffset(0,50)
-Body.Size = UDim2.new(1,0,1,-50)
+Body.Position = UDim2.fromOffset(0, 55)
+Body.Size = UDim2.new(1, 0, 1, -55)
 Body.BackgroundTransparency = 1
 
 -- =========================
 -- SEARCH
 -- =========================
 local Search = Instance.new("TextBox", Body)
-Search.Size = UDim2.new(1,-20,0,35)
-Search.Position = UDim2.fromOffset(10,5)
+Search.Size = UDim2.new(1, -20, 0, 40)
+Search.Position = UDim2.fromOffset(10, 5)
 Search.PlaceholderText = "🔍 Pesquisar..."
 Search.Text = ""
 Search.BackgroundColor3 = Config.Tema.Botao
@@ -718,31 +722,32 @@ Search.BackgroundTransparency = 0.3
 Search.TextColor3 = Config.Tema.Texto
 Search.BorderSizePixel = 0
 Search.Font = Enum.Font.Gotham
-Search.TextSize = 14
+Search.TextSize = 13
 
-Instance.new("UICorner", Search).CornerRadius = UDim.new(0,10)
+local SearchCorner = Instance.new("UICorner", Search)
+SearchCorner.CornerRadius = UDim.new(0, 10)
 
 -- =========================
 -- TABS
 -- =========================
 local TabBar = Instance.new("ScrollingFrame", Body)
-TabBar.Position = UDim2.fromOffset(10,45)
-TabBar.Size = UDim2.new(0,110,1,-55)
+TabBar.Position = UDim2.fromOffset(10, 50)
+TabBar.Size = UDim2.new(0, 100, 1, -60)
 TabBar.BackgroundTransparency = 1
 TabBar.BorderSizePixel = 0
-TabBar.ScrollBarThickness = 4
+TabBar.ScrollBarThickness = 3
 TabBar.CanvasSize = UDim2.fromOffset(0, 0)
 
 local TabLayout = Instance.new("UIListLayout", TabBar)
-TabLayout.Padding = UDim.new(0,6)
+TabLayout.Padding = UDim.new(0, 5)
 
 TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabBar.CanvasSize = UDim2.fromOffset(0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
 local Content = Instance.new("Frame", Body)
-Content.Position = UDim2.fromOffset(130,45)
-Content.Size = UDim2.new(1,-140,1,-55)
+Content.Position = UDim2.fromOffset(120, 50)
+Content.Size = UDim2.new(1, -130, 1, -60)
 Content.BackgroundTransparency = 1
 
 local Tabs = {}
@@ -752,36 +757,37 @@ local Tabs = {}
 -- =========================
 local function CriarAba(nome)
     local Btn = Instance.new("TextButton", TabBar)
-    Btn.Size = UDim2.new(1,0,0,38)
+    Btn.Size = UDim2.new(1, 0, 0, 40)
     Btn.Text = nome
     Btn.BackgroundColor3 = Config.Tema.Botao
     Btn.BackgroundTransparency = 0.3
     Btn.TextColor3 = Config.Tema.Texto
     Btn.BorderSizePixel = 0
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 12
+    Btn.TextSize = 11
     Btn.AutoButtonColor = false
 
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,8)
+    local BtnCorner = Instance.new("UICorner", Btn)
+    BtnCorner.CornerRadius = UDim.new(0, 8)
 
     local Frame = Instance.new("ScrollingFrame", Content)
-    Frame.Size = UDim2.fromScale(1,1)
-    Frame.CanvasSize = UDim2.fromScale(0,0)
-    Frame.ScrollBarThickness = 6
+    Frame.Size = UDim2.fromScale(1, 1)
+    Frame.CanvasSize = UDim2.fromScale(0, 0)
+    Frame.ScrollBarThickness = 5
     Frame.ScrollBarImageColor3 = Config.Tema.Ativo
     Frame.Visible = false
     Frame.BackgroundTransparency = 1
     Frame.BorderSizePixel = 0
 
     local Layout = Instance.new("UIListLayout", Frame)
-    Layout.Padding = UDim.new(0,8)
+    Layout.Padding = UDim.new(0, 6)
     
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Frame.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
     end)
 
     Btn.MouseButton1Click:Connect(function()
-        for _,v in pairs(Tabs) do
+        for _, v in pairs(Tabs) do
             v.Frame.Visible = false
             Tween(v.Btn, 0.2, {BackgroundColor3 = Config.Tema.Botao})
         end
@@ -794,41 +800,48 @@ local function CriarAba(nome)
 end
 
 -- =========================
--- COMPONENTES
+-- COMPONENTES (MOBILE OPTIMIZED)
 -- =========================
 local function Toggle(parent, texto, callback)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1,0,0,45)
+    Box.Size = UDim2.new(1, 0, 0, 50)
     Box.BackgroundColor3 = Config.Tema.Botao
     Box.BackgroundTransparency = 0.3
     Box.BorderSizePixel = 0
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0,8)
+    
+    local BoxCorner = Instance.new("UICorner", Box)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(1,-60,1,0)
-    Label.Position = UDim2.fromOffset(12,0)
+    Label.Size = UDim2.new(1, -65, 1, 0)
+    Label.Position = UDim2.fromOffset(10, 0)
     Label.Text = texto
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextWrapped = true
 
     local Btn = Instance.new("TextButton", Box)
-    Btn.Size = UDim2.fromOffset(40,20)
-    Btn.Position = UDim2.new(1,-50,0.5,-10)
-    Btn.BackgroundColor3 = Color3.fromRGB(120,120,120)
+    Btn.Size = UDim2.fromOffset(45, 22)
+    Btn.Position = UDim2.new(1, -50, 0.5, -11)
+    Btn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
     Btn.Text = ""
     Btn.BorderSizePixel = 0
     Btn.AutoButtonColor = false
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(1,0)
+    
+    local BtnCorner = Instance.new("UICorner", Btn)
+    BtnCorner.CornerRadius = UDim.new(1, 0)
     
     local Circle = Instance.new("Frame", Btn)
-    Circle.Size = UDim2.fromOffset(16,16)
-    Circle.Position = UDim2.fromOffset(2,2)
-    Circle.BackgroundColor3 = Color3.new(1,1,1)
+    Circle.Size = UDim2.fromOffset(18, 18)
+    Circle.Position = UDim2.fromOffset(2, 2)
+    Circle.BackgroundColor3 = Color3.new(1, 1, 1)
     Circle.BorderSizePixel = 0
-    Instance.new("UICorner", Circle).CornerRadius = UDim.new(1,0)
+    
+    local CircleCorner = Instance.new("UICorner", Circle)
+    CircleCorner.CornerRadius = UDim.new(1, 0)
     
     local enabled = false
     
@@ -836,63 +849,70 @@ local function Toggle(parent, texto, callback)
         enabled = not enabled
         
         if enabled then
-            Tween(Circle, 0.2, {Position = UDim2.fromOffset(22,2)})
+            Tween(Circle, 0.2, {Position = UDim2.fromOffset(25, 2)})
             Tween(Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
         else
-            Tween(Circle, 0.2, {Position = UDim2.fromOffset(2,2)})
-            Tween(Btn, 0.2, {BackgroundColor3 = Color3.fromRGB(120,120,120)})
+            Tween(Circle, 0.2, {Position = UDim2.fromOffset(2, 2)})
+            Tween(Btn, 0.2, {BackgroundColor3 = Color3.fromRGB(120, 120, 120)})
         end
         
         if callback then
-            spawn(function() callback(enabled) end)
+            task.spawn(function() callback(enabled) end)
         end
     end)
 end
 
 local function Dropdown(parent, texto, options, callback)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1,0,0,45)
+    Box.Size = UDim2.new(1, 0, 0, 50)
     Box.BackgroundColor3 = Config.Tema.Botao
     Box.BackgroundTransparency = 0.3
     Box.BorderSizePixel = 0
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0,8)
+    
+    local BoxCorner = Instance.new("UICorner", Box)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(0.5,0,1,0)
-    Label.Position = UDim2.fromOffset(12,0)
+    Label.Size = UDim2.new(0.45, 0, 1, 0)
+    Label.Position = UDim2.fromOffset(10, 0)
     Label.Text = texto
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextWrapped = true
 
     local Btn = Instance.new("TextButton", Box)
-    Btn.Size = UDim2.new(0.45,-10,0,35)
-    Btn.Position = UDim2.new(0.55,0,0.5,-17.5)
-    Btn.Text = options[1]
+    Btn.Size = UDim2.new(0.5, -10, 0, 38)
+    Btn.Position = UDim2.new(0.5, 0, 0.5, -19)
+    Btn.Text = options[1] or "..."
     Btn.BackgroundColor3 = Config.Tema.Secundario
     Btn.BackgroundTransparency = 0.2
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 11
+    Btn.TextSize = 10
     Btn.BorderSizePixel = 0
     Btn.TextTruncate = Enum.TextTruncate.AtEnd
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,6)
+    
+    local BtnCorner = Instance.new("UICorner", Btn)
+    BtnCorner.CornerRadius = UDim.new(0, 6)
     
     local DropScroll = Instance.new("ScrollingFrame", Gui)
-    DropScroll.Size = UDim2.new(0,200,0,0)
-    DropScroll.Position = UDim2.new(0.55,0,0.5,0)
+    DropScroll.Size = UDim2.new(0, 200, 0, 0)
+    DropScroll.Position = UDim2.new(0.5, 0, 0.5, 0)
     DropScroll.BackgroundColor3 = Config.Tema.Secundario
     DropScroll.BorderSizePixel = 0
     DropScroll.Visible = false
-    DropScroll.ZIndex = 100
+    DropScroll.ZIndex = 10000
     DropScroll.ScrollBarThickness = 4
-    DropScroll.CanvasSize = UDim2.fromOffset(0, #options * 35)
-    Instance.new("UICorner", DropScroll).CornerRadius = UDim.new(0,6)
+    DropScroll.CanvasSize = UDim2.fromOffset(0, #options * 38)
+    
+    local DropCorner = Instance.new("UICorner", DropScroll)
+    DropCorner.CornerRadius = UDim.new(0, 6)
     
     local DropLayout = Instance.new("UIListLayout", DropScroll)
-    DropLayout.Padding = UDim.new(0,2)
+    DropLayout.Padding = UDim.new(0, 2)
     
     local isOpen = false
     
@@ -902,19 +922,19 @@ local function Dropdown(parent, texto, options, callback)
         
         if isOpen then
             local btnPos = Btn.AbsolutePosition
-            DropScroll.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + 40)
-            DropScroll.Size = UDim2.new(0,200,0,math.min(#options * 35, 200))
+            DropScroll.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + 42)
+            DropScroll.Size = UDim2.new(0, 200, 0, math.min(#options * 38, 250))
         end
     end)
     
     for _, option in pairs(options) do
         local OptBtn = Instance.new("TextButton", DropScroll)
-        OptBtn.Size = UDim2.new(1,0,0,33)
+        OptBtn.Size = UDim2.new(1, 0, 0, 36)
         OptBtn.Text = option
         OptBtn.BackgroundColor3 = Config.Tema.Botao
         OptBtn.TextColor3 = Config.Tema.Texto
         OptBtn.Font = Enum.Font.Gotham
-        OptBtn.TextSize = 11
+        OptBtn.TextSize = 10
         OptBtn.BorderSizePixel = 0
         OptBtn.TextTruncate = Enum.TextTruncate.AtEnd
         
@@ -924,7 +944,7 @@ local function Dropdown(parent, texto, options, callback)
             isOpen = false
             
             if callback then
-                spawn(function() callback(option) end)
+                task.spawn(function() callback(option) end)
             end
         end)
     end
@@ -932,38 +952,42 @@ end
 
 local function Button(parent, texto, callback)
     local Btn = Instance.new("TextButton", parent)
-    Btn.Size = UDim2.new(1,0,0,45)
+    Btn.Size = UDim2.new(1, 0, 0, 50)
     Btn.Text = texto
     Btn.BackgroundColor3 = Config.Tema.Ativo
     Btn.BackgroundTransparency = 0.3
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 14
+    Btn.TextSize = 13
     Btn.BorderSizePixel = 0
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,8)
+    
+    local BtnCorner = Instance.new("UICorner", Btn)
+    BtnCorner.CornerRadius = UDim.new(0, 8)
     
     Btn.MouseButton1Click:Connect(function()
         if callback then
-            spawn(function() callback() end)
+            task.spawn(function() callback() end)
         end
     end)
 end
 
 local function Section(parent, texto)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1,0,0,35)
+    Box.Size = UDim2.new(1, 0, 0, 40)
     Box.BackgroundColor3 = Config.Tema.AzulClaro
     Box.BackgroundTransparency = 0.5
     Box.BorderSizePixel = 0
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0,8)
+    
+    local BoxCorner = Instance.new("UICorner", Box)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(1,0,1,0)
+    Label.Size = UDim2.new(1, 0, 1, 0)
     Label.Text = "⚙️ " .. texto
     Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color3.new(1,1,1)
+    Label.TextColor3 = Color3.new(1, 1, 1)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 14
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Center
 end
 
@@ -974,10 +998,7 @@ local FarmTab = CriarAba("🌴 Farm")
 local CombatTab = CriarAba("⚔️ Combat")
 local FruitTab = CriarAba("🍏 Frutas")
 local TeleportTab = CriarAba("🧭 TP")
-local SeaEventTab = CriarAba("🦈 Sea Event")
-local VisualTab = CriarAba("👁️ ESP")
 local PlayerTab = CriarAba("🛡️ Player")
-local ConfigTab = CriarAba("⚙️ Config")
 
 Tabs["🌴 Farm"].Frame.Visible = true
 Tween(Tabs["🌴 Farm"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
@@ -985,31 +1006,25 @@ Tween(Tabs["🌴 Farm"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
 -- =========================
 -- ABA FARM
 -- =========================
-Section(FarmTab, "Configuração de Upamento")
+Section(FarmTab, "Configuração de Farm")
 
 Dropdown(FarmTab, "Tipo de Arma", {"Nenhum", "Estilo de Luta", "Espada", "Arma", "Fruta"}, function(v)
     _G.Settings.WeaponType = v
-    print("🔧 Tipo de arma:", v)
 end)
 
-Dropdown(FarmTab, "Distância do NPC", {"20", "30", "40", "50"}, function(v)
+Dropdown(FarmTab, "Distância", {"20", "30", "40", "50"}, function(v)
     _G.Settings.FarmDistance = tonumber(v)
-    print("📏 Distância:", v)
 end)
 
 Toggle(FarmTab, "Bring Mobs", function(v)
     _G.Settings.BringMobs = v
 end)
 
-Toggle(FarmTab, "Kill Aura", function(v)
-    _G.Settings.KillAura = v
-end)
-
 Section(FarmTab, "Auto Farm")
 
 Toggle(FarmTab, "Auto Farm Level", function(v)
     if v and _G.Settings.WeaponType == "Nenhum" then
-        warn("⚠️ SELECIONE UM TIPO DE ARMA PRIMEIRO!")
+        warn("⚠️ SELECIONE UM TIPO DE ARMA!")
         return
     end
     _G.Settings.AutoFarmLevel = v
@@ -1041,19 +1056,19 @@ end)
 -- =========================
 -- ABA FRUTAS
 -- =========================
-Toggle(FruitTab, "Girar Frutas (Random)", function(v)
+Toggle(FruitTab, "Girar Frutas", function(v)
     _G.Settings.AutoRandomFruit = v
 end)
 
-Toggle(FruitTab, "Ir Atrás de Frutas", function(v)
+Toggle(FruitTab, "Fruit Sniper", function(v)
     _G.Settings.AutoFruitSniper = v
 end)
 
-Toggle(FruitTab, "Auto Guardar Fruta", function(v)
+Toggle(FruitTab, "Auto Guardar", function(v)
     _G.Settings.AutoStoreFruit = v
 end)
 
-Toggle(FruitTab, "Auto Comprar Fruta", function(v)
+Toggle(FruitTab, "Auto Comprar", function(v)
     _G.Settings.AutoBuyFruit = v
 end)
 
@@ -1061,44 +1076,37 @@ Dropdown(FruitTab, "Fruta", FruitList, function(v)
     _G.Settings.SelectedFruit = v
 end)
 
-Button(FruitTab, "📊 Espiar Loja Normal", function()
-    spawn(function()
+Button(FruitTab, "📊 Loja Normal", function()
+    task.spawn(function()
+        local remote = GetRemote()
+        if not remote then return end
+        
         local success, fruits = pcall(function()
-            return GetRemote():InvokeServer("GetFruits")
+            return remote:InvokeServer("GetFruits")
         end)
         
         if success and fruits then
-            print("=== 📊 LOJA NORMAL ===")
-            for i, v in pairs(fruits) do
+            print("=== LOJA NORMAL ===")
+            for _, v in pairs(fruits) do
                 if type(v) == "table" then
-                    print(v.Name or "Desconhecido", "-", v.Price or 0, "💎")
+                    print(v.Name or "?", "-", v.Price or 0, "💎")
                 end
             end
-            print("========================")
-        else
-            warn("❌ Erro ao buscar frutas da loja!")
         end
     end)
 end)
 
-Button(FruitTab, "🌀 Espiar Loja Miragem", function()
-    spawn(function()
-        local success, result = pcall(function()
-            return GetRemote():InvokeServer("GetFruits", LocalPlayer.Character.PrimaryPart.CFrame, true)
+Button(FruitTab, "🌀 Loja Miragem", function()
+    task.spawn(function()
+        local remote = GetRemote()
+        if not remote then return end
+        
+        local success = pcall(function()
+            return remote:InvokeServer("GetFruits", LocalPlayer.Character.PrimaryPart.CFrame, true)
         end)
         
         if success then
-            print("=== 🌀 LOJA MIRAGEM ===")
-            if type(result) == "table" then
-                for i, v in pairs(result) do
-                    print(v.Name or "Desconhecido", "-", v.Price or 0, "💎")
-                end
-            else
-                print("Loja verificada!")
-            end
-            print("========================")
-        else
-            warn("❌ Erro ao espiar loja miragem!")
+            print("✅ Loja miragem verificada!")
         end
     end)
 end)
@@ -1108,57 +1116,51 @@ end)
 -- =========================
 Section(TeleportTab, "Selecionar Sea")
 
--- Botões de Sea
-local SeaButtonsFrame = Instance.new("Frame", TeleportTab)
-SeaButtonsFrame.Size = UDim2.new(1,0,0,50)
-SeaButtonsFrame.BackgroundTransparency = 1
+local SeaFrame = Instance.new("Frame", TeleportTab)
+SeaFrame.Size = UDim2.new(1, 0, 0, 55)
+SeaFrame.BackgroundTransparency = 1
 
-local SeaLayout = Instance.new("UIListLayout", SeaButtonsFrame)
+local SeaLayout = Instance.new("UIListLayout", SeaFrame)
 SeaLayout.FillDirection = Enum.FillDirection.Horizontal
-SeaLayout.Padding = UDim.new(0,5)
+SeaLayout.Padding = UDim.new(0, 5)
 SeaLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 for i = 1, 3 do
-    local SeaBtn = Instance.new("TextButton", SeaButtonsFrame)
-    SeaBtn.Size = UDim2.new(0.3,0,0,45)
+    local SeaBtn = Instance.new("TextButton", SeaFrame)
+    SeaBtn.Size = UDim2.new(0.3, 0, 0, 50)
     SeaBtn.Text = "SEA " .. i
     SeaBtn.BackgroundColor3 = Sea == i and Config.Tema.Ativo or Config.Tema.Botao
     SeaBtn.BackgroundTransparency = 0.3
-    SeaBtn.TextColor3 = Color3.new(1,1,1)
+    SeaBtn.TextColor3 = Color3.new(1, 1, 1)
     SeaBtn.Font = Enum.Font.GothamBold
-    SeaBtn.TextSize = 14
+    SeaBtn.TextSize = 12
     SeaBtn.BorderSizePixel = 0
-    Instance.new("UICorner", SeaBtn).CornerRadius = UDim.new(0,8)
+    
+    local SeaBtnCorner = Instance.new("UICorner", SeaBtn)
+    SeaBtnCorner.CornerRadius = UDim.new(0, 8)
     
     SeaBtn.MouseButton1Click:Connect(function()
         if Sea ~= i then
-            warn("⚠️ Você está no SEA " .. Sea .. "! Entre no SEA " .. i .. " pelo menu do jogo.")
-        else
-            print("✅ Você já está no SEA " .. i)
+            warn("⚠️ Você está no SEA " .. Sea)
         end
     end)
 end
 
-Section(TeleportTab, "Selecionar Ilha")
+Section(TeleportTab, "Ilhas")
 
-local islandOptions = Sea == 1 and IslandsSea1 or Sea == 2 and IslandsSea2 or IslandsSea3
-
-Dropdown(TeleportTab, "Ilha", islandOptions, function(v)
+Dropdown(TeleportTab, "Ilha", CurrentIslands, function(v)
     _G.Settings.SelectedIsland = v
-    print("🗺️ Ilha selecionada:", v)
 end)
 
 Button(TeleportTab, "🚀 TELEPORTAR", function()
     if not _G.Settings.SelectedIsland then
-        warn("⚠️ SELECIONE UMA ILHA PRIMEIRO!")
+        warn("⚠️ SELECIONE UMA ILHA!")
         return
     end
     
     if IslandPositions[_G.Settings.SelectedIsland] then
         TP(IslandPositions[_G.Settings.SelectedIsland])
-        print("✅ Teleportando para:", _G.Settings.SelectedIsland)
-    else
-        warn("❌ Coordenadas não encontradas!")
+        print("✅ TP:", _G.Settings.SelectedIsland)
     end
 end)
 
@@ -1182,11 +1184,13 @@ local function OpenHub()
     Config.Aberto = true
     
     Main.Visible = true
-    Main.Size = UDim2.fromScale(0,0)
+    Main.Size = UDim2.fromScale(0, 0)
     Main.BackgroundTransparency = 1
     
+    local targetSize = IsMobile() and UDim2.fromScale(0.9, 0.8) or UDim2.fromScale(0.75, 0.7)
+    
     Tween(Main, 0.4, {
-        Size = UDim2.fromScale(0.75,0.7),
+        Size = targetSize,
         BackgroundTransparency = 0.35
     })
 end
@@ -1195,7 +1199,7 @@ local function CloseHub()
     if not Config.Aberto then return end
     
     Tween(Main, 0.3, {
-        Size = UDim2.fromScale(0,0),
+        Size = UDim2.fromScale(0, 0),
         BackgroundTransparency = 1
     })
     
@@ -1217,13 +1221,25 @@ CloseBtn.MouseButton1Click:Connect(function()
 end)
 
 -- =========================
+-- ANTI-CRASH MOBILE
+-- =========================
+if IsMobile() then
+    task.spawn(function()
+        while task.wait(30) do
+            pcall(function()
+                collectgarbage("collect")
+            end)
+        end
+    end)
+end
+
+-- =========================
 -- INIT
 -- =========================
 task.wait(1)
-print("🚀 Lag Teck Hub v1.2 LOADED!")
+print("🚀 Lag Teck Hub v1.3 DELTA iOS")
 print("✅ Sea:", Sea)
-print("📱 Mobile + PC")
-print("🎯 Auto Farm: FIXED")
-print("🗺️ Teleport: WORKING")
+print("📱 Mobile:", IsMobile())
+print("🎯 Status: OK")
 
 OpenHub()
