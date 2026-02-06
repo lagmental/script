@@ -4,6 +4,8 @@
     Blox Fruits | Delta iOS Optimized
 =====================================================]]--
 
+_G.JoinTime = os.time()  -- ← ADICIONE ESTA LINHA AQUI
+
 -- =========================
 -- PROTEÇÃO MOBILE
 -- =========================
@@ -923,9 +925,43 @@ local function TeleportToSea(seaNumber)
         [3] = 7449423635
     }
     
-    if placeIds[seaNumber] then
-        game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+    if not placeIds[seaNumber] then
+        warn("❌ Sea inválido!")
+        return
     end
+    
+    if Sea == seaNumber then
+        print("✅ Você já está no SEA " .. seaNumber)
+        return
+    end
+    
+    print("🚀 Iniciando teleport para SEA " .. seaNumber .. "...")
+    
+    -- Método 1: Teleport direto
+    local success1 = pcall(function()
+        game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+    end)
+    
+    if success1 then
+        print("✅ Teleport iniciado!")
+        return
+    end
+    
+    -- Método 2: Teleport com reserva de servidor
+    local success2 = pcall(function()
+        game:GetService("TeleportService"):TeleportToPlaceInstance(
+            placeIds[seaNumber],
+            game.JobId,
+            LocalPlayer
+        )
+    end)
+    
+    if success2 then
+        print("✅ Teleport iniciado (método 2)!")
+        return
+    end
+    
+    warn("❌ Falha ao teleportar. Tente novamente!")
 end
 
 -- =========================
@@ -1323,8 +1359,101 @@ local function Section(parent, texto)
 end
 
 -- =========================
+-- FUNÇÕES AUXILIARES PARA ABA PRINCIPAL
+-- =========================
+local function FormatNumber(num)
+    if num >= 1000000000 then
+        return string.format("%.1fB", num / 1000000000)
+    elseif num >= 1000000 then
+        return string.format("%.1fM", num / 1000000)
+    elseif num >= 1000 then
+        return string.format("%.1fK", num / 1000)
+    else
+        return tostring(math.floor(num))
+    end
+end
+
+local function GetServerUptime()
+    local uptime = workspace:GetServerTimeNow()
+    local hours = math.floor(uptime / 3600)
+    local minutes = math.floor((uptime % 3600) / 60)
+    return string.format("%dh %dm", hours, minutes)
+end
+
+local function GetSessionTime()
+    local sessionTime = os.time() - (_G.JoinTime or os.time())
+    local hours = math.floor(sessionTime / 3600)
+    local minutes = math.floor((sessionTime % 3600) / 60)
+    return string.format("%dh %dm", hours, minutes)
+end
+
+local function InfoBox(parent, title, value, color)
+    local Box = Instance.new("Frame", parent)
+    Box.Size = UDim2.new(1, 0, 0, 60)
+    Box.BackgroundColor3 = Config.Tema.Botao
+    Box.BackgroundTransparency = 0.3
+    Box.BorderSizePixel = 0
+    
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 10)
+    
+    local Title = Instance.new("TextLabel", Box)
+    Title.Size = UDim2.new(1, -20, 0.4, 0)
+    Title.Position = UDim2.fromOffset(10, 5)
+    Title.Text = title
+    Title.BackgroundTransparency = 1
+    Title.TextColor3 = Color3.fromRGB(150, 150, 150)
+    Title.Font = Enum.Font.Gotham
+    Title.TextSize = 10
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local Value = Instance.new("TextLabel", Box)
+    Value.Size = UDim2.new(1, -20, 0.5, 0)
+    Value.Position = UDim2.new(0, 10, 0.5, 0)
+    Value.Text = value
+    Value.BackgroundTransparency = 1
+    Value.TextColor3 = color or Config.Tema.Texto
+    Value.Font = Enum.Font.GothamBold
+    Value.TextSize = 16
+    Value.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return {Box = Box, ValueLabel = Value}
+end
+
+local function StatusIndicator(parent, title, isActive)
+    local Box = Instance.new("Frame", parent)
+    Box.Size = UDim2.new(0.48, 0, 0, 45)
+    Box.BackgroundColor3 = Config.Tema.Botao
+    Box.BackgroundTransparency = 0.3
+    Box.BorderSizePixel = 0
+    
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 8)
+    
+    local Indicator = Instance.new("Frame", Box)
+    Indicator.Size = UDim2.fromOffset(12, 12)
+    Indicator.Position = UDim2.fromOffset(10, 17)
+    Indicator.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    Indicator.BorderSizePixel = 0
+    
+    Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
+    
+    local Label = Instance.new("TextLabel", Box)
+    Label.Size = UDim2.new(1, -35, 1, 0)
+    Label.Position = UDim2.fromOffset(30, 0)
+    Label.Text = title
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Config.Tema.Texto
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 11
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextWrapped = true
+    
+    return {Box = Box, Indicator = Indicator, Label = Label}
+end
+
+-- =========================
 -- CRIANDO ABAS
 -- =========================
+local PrincipalTab = CriarAba("🏠 Principal")  -- ← ADICIONE ESTA LINHA
 local FarmTab = CriarAba("🌴 Farm")
 local FruitTab = CriarAba("🍏 Frutas")
 local TeleportTab = CriarAba("🧭 TP")
@@ -1332,8 +1461,98 @@ local SeaEventTab = CriarAba("🦈 Sea Event")
 local ESPTab = CriarAba("👁️ ESP")
 local PlayerTab = CriarAba("🛡️ Config")
 
-Tabs["🌴 Farm"].Frame.Visible = true
-Tween(Tabs["🌴 Farm"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
+-- Definir aba Principal como primeira
+for _, v in pairs(Tabs) do
+    v.Frame.Visible = false
+    Tween(v.Btn, 0.2, {BackgroundColor3 = Config.Tema.Botao})
+end
+Tabs["🏠 Principal"].Frame.Visible = true
+Tween(Tabs["🏠 Principal"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
+
+-- =========================
+-- ABA PRINCIPAL
+-- =========================
+Section(PrincipalTab, "Comunidade Discord")
+
+Button(PrincipalTab, "🎮 Entrar no Discord", function()
+    setclipboard("https://discord.gg/RnZ6XHHFj7")
+    print("✅ Link copiado: https://discord.gg/RnZ6XHHFj7")
+    print("📋 Cole no seu navegador!")
+end)
+
+local DiscordInfo = Instance.new("Frame", PrincipalTab)
+DiscordInfo.Size = UDim2.new(1, 0, 0, 80)
+DiscordInfo.BackgroundColor3 = Config.Tema.Secundario
+DiscordInfo.BackgroundTransparency = 0.3
+DiscordInfo.BorderSizePixel = 0
+
+Instance.new("UICorner", DiscordInfo).CornerRadius = UDim.new(0, 10)
+
+local DiscordText = Instance.new("TextLabel", DiscordInfo)
+DiscordText.Size = UDim2.new(1, -20, 1, -20)
+DiscordText.Position = UDim2.fromOffset(10, 10)
+DiscordText.Text = "💬 Discord Lag Teck\n👥 Membros ativos e suporte\n🎯 Updates e novidades"
+DiscordText.BackgroundTransparency = 1
+DiscordText.TextColor3 = Config.Tema.Texto
+DiscordText.Font = Enum.Font.Gotham
+DiscordText.TextSize = 12
+DiscordText.TextWrapped = true
+DiscordText.TextYAlignment = Enum.TextYAlignment.Top
+
+Section(PrincipalTab, "Informações de Tempo")
+
+local UptimeBox = InfoBox(PrincipalTab, "⏱️ Tempo do Servidor", GetServerUptime(), Config.Tema.AzulClaro)
+local SessionBox = InfoBox(PrincipalTab, "🕐 Sua Sessão", GetSessionTime(), Color3.fromRGB(0, 255, 0))
+
+task.spawn(function()
+    while task.wait(60) do
+        pcall(function()
+            UptimeBox.ValueLabel.Text = GetServerUptime()
+            SessionBox.ValueLabel.Text = GetSessionTime()
+        end)
+    end
+end)
+
+Section(PrincipalTab, "Perfil do Jogador")
+
+local MoneyBox = InfoBox(PrincipalTab, "💰 Dinheiro", "Carregando...", Color3.fromRGB(255, 215, 0))
+local FragBox = InfoBox(PrincipalTab, "💎 Fragmentos", "Carregando...", Color3.fromRGB(100, 200, 255))
+
+task.spawn(function()
+    while task.wait(5) do
+        pcall(function()
+            local money = LocalPlayer.Data.Beli.Value
+            local frags = LocalPlayer.Data.Fragments.Value
+            
+            MoneyBox.ValueLabel.Text = "$ " .. FormatNumber(money)
+            FragBox.ValueLabel.Text = FormatNumber(frags)
+        end)
+    end
+end)
+
+Section(PrincipalTab, "Status de Eventos (SEA 2 e 3)")
+
+local StatusGrid = Instance.new("Frame", PrincipalTab)
+StatusGrid.Size = UDim2.new(1, 0, 0, 200)
+StatusGrid.BackgroundTransparency = 1
+
+local GridLayout = Instance.new("UIGridLayout", StatusGrid)
+GridLayout.CellSize = UDim2.new(0.48, 0, 0, 45)
+GridLayout.CellPadding = UDim2.new(0.04, 0, 0, 8)
+
+local LeviathanStatus = StatusIndicator(StatusGrid, "🐉 Leviathan Spawned", false)
+local MirageStatus = StatusIndicator(StatusGrid, "🏝️ Ilha Miragem", false)
+local VolcanoStatus = StatusIndicator(StatusGrid, "🌋 Ilha Vulcão", false)
+local KatakuriStatus = StatusIndicator(StatusGrid, "🍩 Katakuri Progress", false)
+
+task.spawn(function()
+    while task.wait(30) do
+        pcall(function()
+            local leviathanSpawned = workspace:FindFirstChild("Leviathan") ~= nil
+            LeviathanStatus.Indicator.BackgroundColor3 = leviathanSpawned and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        end)
+    end
+end)
 
 -- =========================
 -- ABA FARM
