@@ -1,7 +1,7 @@
 repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
 --[[===================================================
-    LagTeck Hub - v2.0 ULTRA COMPLETO [REFORMULADO]
-    Sistema completo com save config
+    LagTeck Hub - v2.0 ULTRA COMPLETO [CORRIGIDO]
+    Sistema completo com todas as correções
     Blox Fruits | Delta iOS Optimized
 =====================================================]]--
 
@@ -27,34 +27,6 @@ local LocalPlayer = Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
 
 -- =========================
--- SISTEMA DE SAVE
--- =========================
-local ConfigFile = "LagTeckHub_Config.json"
-
-local function SaveConfig()
-    local config = {
-        Settings = _G.Settings,
-        LastSaved = os.time()
-    }
-    writefile(ConfigFile, HttpService:JSONEncode(config))
-end
-
-local function LoadConfig()
-    if isfile(ConfigFile) then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(ConfigFile))
-        end)
-        if success and data.Settings then
-            for k, v in pairs(data.Settings) do
-                _G.Settings[k] = v
-            end
-            return true
-        end
-    end
-    return false
-end
-
--- =========================
 -- VARIÁVEIS GLOBAIS
 -- =========================
 _G.Settings = {
@@ -70,22 +42,27 @@ _G.Settings = {
     SelectedFruit = "Leopard-Leopard",
     AutoRandomFruit = false,
     
+    -- CONFIGURAÇÕES DE FARM
     WeaponType = "Nenhum",
     FarmDistance = 30,
     BringMobs = true,
     
+    -- PLAYER
     WalkOnWater = false,
     RemoveFog = false,
     AntiAFK = false,
     
+    -- ESP
     ESPFruit = false,
     ESPIsland = false,
     ESPPlayer = false,
     ESPChest = false,
     
+    -- TELEPORT
     SelectedIsland = nil,
     SelectedSea = 1,
     
+    -- SEA EVENT
     AutoKatakuri = false,
     AutoFactory = false,
     AutoSeaBeast = false,
@@ -93,13 +70,11 @@ _G.Settings = {
     SeaDepth = "Mar 1",
     SeaEventActive = false,
     
+    -- PVP
     AutoPVP = false,
     SelectedPlayer = nil,
     SafeMode = false
 }
-
--- Carregar config salva
-local configLoaded = LoadConfig()
 
 -- =========================
 -- DETECÇÃO DO SEA
@@ -123,7 +98,6 @@ local Sea = GetCurrentSea()
 -- =========================
 local Config = {
     Aberto = false,
-    Minimizado = false,
     Tema = {
         Fundo = Color3.fromRGB(10,15,30),
         Secundario = Color3.fromRGB(15,25,45),
@@ -135,55 +109,82 @@ local Config = {
 }
 
 -- =========================
--- SISTEMA DE NOTIFICAÇÕES
+-- LISTAS DE BOSSES POR SEA
 -- =========================
-local function Notify(texto, duracao)
-    duracao = duracao or 3
-    
-    local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-    ScreenGui.Name = "NotificationGui"
-    
-    local NotifFrame = Instance.new("Frame", ScreenGui)
-    NotifFrame.Size = UDim2.new(0, 300, 0, 0)
-    NotifFrame.Position = UDim2.new(0.5, -150, 0, -100)
-    NotifFrame.AnchorPoint = Vector2.new(0.5, 0)
-    NotifFrame.BackgroundColor3 = Config.Tema.Secundario
-    NotifFrame.BorderSizePixel = 0
-    
-    local Corner = Instance.new("UICorner", NotifFrame)
-    Corner.CornerRadius = UDim.new(0, 10)
-    
-    local Label = Instance.new("TextLabel", NotifFrame)
-    Label.Size = UDim2.new(1, -20, 1, 0)
-    Label.Position = UDim2.fromOffset(10, 0)
-    Label.Text = texto
-    Label.TextColor3 = Color3.new(1, 1, 1)
-    Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 14
-    Label.TextWrapped = true
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    TweenService:Create(NotifFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 60), Position = UDim2.new(0.5, -150, 0, 20)}):Play()
-    
-    task.wait(duracao)
-    
-    TweenService:Create(NotifFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 0), Position = UDim2.new(0.5, -150, 0, -100)}):Play()
-    task.wait(0.3)
-    ScreenGui:Destroy()
-end
+local BossListSea1 = {
+    "All",
+    "The Gorilla King",
+    "Bobby",
+    "Yeti",
+    "Mob Leader",
+    "Vice Admiral",
+    "Warden",
+    "Chief Warden",
+    "Swan",
+    "Magma Admiral",
+    "Fishman Lord",
+    "Wysper",
+    "Thunder God",
+    "Cyborg"
+}
 
--- =========================
--- LISTAS
--- =========================
-local BossListSea1 = {"All","The Gorilla King","Bobby","Yeti","Mob Leader","Vice Admiral","Warden","Chief Warden","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg"}
-local BossListSea2 = {"All","Diamond","Jeremy","Fajita","Don Swan","Smoke Admiral","Cursed Captain","Darkbeard","Order","Awakened Ice Admiral"}
-local BossListSea3 = {"All","Stone","Island Empress","Kilo Admiral","Captain Elephant","Beautiful Pirate","rip_indra True Form","Longma","Soul Reaper","Cake Queen"}
+local BossListSea2 = {
+    "All",
+    "Diamond",
+    "Jeremy",
+    "Fajita",
+    "Don Swan",
+    "Smoke Admiral",
+    "Cursed Captain",
+    "Darkbeard",
+    "Order",
+    "Awakened Ice Admiral"
+}
+
+local BossListSea3 = {
+    "All",
+    "Stone",
+    "Island Empress",
+    "Kilo Admiral",
+    "Captain Elephant",
+    "Beautiful Pirate",
+    "rip_indra True Form",
+    "Longma",
+    "Soul Reaper",
+    "Cake Queen"
+}
+
 local BossList = Sea == 1 and BossListSea1 or Sea == 2 and BossListSea2 or BossListSea3
 
-local FruitList = {"Leopard-Leopard","Dragon-Dragon","Dough-Dough","Shadow-Shadow","Venom-Venom","Control-Control","Spirit-Spirit","Soul-Soul","Gravity-Gravity","Rumble-Rumble","Buddha-Buddha","Light-Light","Dark-Dark","Magma-Magma","Ice-Ice","Quake-Quake","Flame-Flame","Phoenix-Phoenix"}
+-- =========================
+-- LISTA DE FRUTAS
+-- =========================
+local FruitList = {
+    "Leopard-Leopard",
+    "Dragon-Dragon", 
+    "Dough-Dough",
+    "Shadow-Shadow",
+    "Venom-Venom",
+    "Control-Control",
+    "Spirit-Spirit",
+    "Soul-Soul",
+    "Gravity-Gravity",
+    "Rumble-Rumble",
+    "Buddha-Buddha",
+    "Light-Light",
+    "Dark-Dark",
+    "Magma-Magma",
+    "Ice-Ice",
+    "Quake-Quake",
+    "Flame-Flame",
+    "Phoenix-Phoenix"
+}
 
+-- =========================
+-- COORDENADAS COMPLETAS DAS ILHAS
+-- =========================
 local IslandPositions = {
+    -- SEA 1
     ["Pirate Starter"] = CFrame.new(1071, 16, 1426),
     ["Marine Starter"] = CFrame.new(-2573, 73, 2046),
     ["Jungle"] = CFrame.new(-1612, 37, 149),
@@ -200,6 +201,8 @@ local IslandPositions = {
     ["Underwater City"] = CFrame.new(61164, 5, 1819),
     ["Upper Skylands"] = CFrame.new(-7894, 5547, -379),
     ["Fountain City"] = CFrame.new(-380, 38, 297),
+    
+    -- SEA 2
     ["Kingdom of Rose"] = CFrame.new(-288, 7, 5579),
     ["Cafe"] = CFrame.new(-377, 73, 298),
     ["Mansion"] = CFrame.new(-12471, 374, -7551),
@@ -211,6 +214,8 @@ local IslandPositions = {
     ["Forgotten Island"] = CFrame.new(-3053, 240, -10145),
     ["Dark Arena"] = CFrame.new(3777, 91, -3000),
     ["Usoaps Island"] = CFrame.new(4700, 8, 2997),
+    
+    -- SEA 3
     ["Port Town"] = CFrame.new(-290, 44, 5343),
     ["Hydra Island"] = CFrame.new(5749, 612, -276),
     ["Great Tree"] = CFrame.new(2681, 1682, -7190),
@@ -221,15 +226,31 @@ local IslandPositions = {
     ["Floating Turtle"] = CFrame.new(-13274, 332, -7984)
 }
 
-local IslandsSea1 = {"Pirate Starter","Marine Starter","Jungle","Pirate Village","Desert","Frozen Village","Marine Fortress","Sky Island 1","Sky Island 2","Sky Island 3","Prison","Colosseum","Magma Village","Underwater City","Upper Skylands","Fountain City"}
-local IslandsSea2 = {"Kingdom of Rose","Cafe","Mansion","Graveyard","Snow Mountain","Hot and Cold","Cursed Ship","Ice Castle","Forgotten Island","Dark Arena","Usoaps Island"}
-local IslandsSea3 = {"Port Town","Hydra Island","Great Tree","Castle on the Sea","Haunted Castle","Sea of Treats","Tiki Outpost","Floating Turtle"}
+local IslandsSea1 = {
+    "Pirate Starter", "Marine Starter", "Jungle", "Pirate Village",
+    "Desert", "Frozen Village", "Marine Fortress", "Sky Island 1",
+    "Sky Island 2", "Sky Island 3", "Prison", "Colosseum",
+    "Magma Village", "Underwater City", "Upper Skylands", "Fountain City"
+}
+
+local IslandsSea2 = {
+    "Kingdom of Rose", "Cafe", "Mansion", "Graveyard",
+    "Snow Mountain", "Hot and Cold", "Cursed Ship", "Ice Castle",
+    "Forgotten Island", "Dark Arena", "Usoaps Island"
+}
+
+local IslandsSea3 = {
+    "Port Town", "Hydra Island", "Great Tree", "Castle on the Sea",
+    "Haunted Castle", "Sea of Treats", "Tiki Outpost", "Floating Turtle"
+}
+
 local CurrentIslands = Sea == 1 and IslandsSea1 or Sea == 2 and IslandsSea2 or IslandsSea3
 
 -- =========================
--- SISTEMA DE QUESTS
+-- SISTEMA DE QUESTS COMPLETO
 -- =========================
 local QuestData = {}
+
 if Sea == 1 then
     QuestData = {
         [1] = {Quest = "BanditQuest1", QuestNum = 1, Mob = "Bandit", Pos = CFrame.new(1059, 16, 1549)},
@@ -319,12 +340,14 @@ end
 local function GetQuestByLevel(level)
     local selectedQuest = nil
     local maxLevel = 0
+    
     for lvl, quest in pairs(QuestData) do
         if level >= lvl and lvl > maxLevel then
             selectedQuest = quest
             maxLevel = lvl
         end
     end
+    
     return selectedQuest
 end
 
@@ -332,24 +355,41 @@ end
 -- FUNÇÕES CORE
 -- =========================
 local function Tween(obj, time, props)
-    local tween = TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Linear), props)
-    tween:Play()
-    return tween
+    local success, tween = pcall(function()
+        return TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Linear), props)
+    end)
+    
+    if success and tween then
+        tween:Play()
+        return tween
+    end
+    return nil
 end
 
 local function TP(cframe)
-    pcall(function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = LocalPlayer.Character.HumanoidRootPart
-            local distance = (hrp.Position - cframe.Position).Magnitude
-            if distance < 250 then
-                hrp.CFrame = cframe
-            else
-                local tween = Tween(hrp, distance/300, {CFrame = cframe})
+    local success = pcall(function()
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            return
+        end
+        
+        local char = LocalPlayer.Character
+        local hrp = char.HumanoidRootPart
+        
+        local distance = (hrp.Position - cframe.Position).Magnitude
+        
+        if distance < 250 then
+            hrp.CFrame = cframe
+        else
+            local tween = Tween(hrp, distance/300, {CFrame = cframe})
+            if tween then
                 tween.Completed:Wait()
             end
         end
     end)
+    
+    if not success then
+        warn("❌ Erro ao teleportar")
+    end
 end
 
 local function GetRemote()
@@ -360,42 +400,37 @@ local function GetRemote()
 end
 
 local function EquipWeapon()
-    if _G.Settings.WeaponType == "Nenhum" then return false end
+    if _G.Settings.WeaponType == "Nenhum" then
+        return false
+    end
     
-    local weaponMap = {
-        ["Estilo de Luta"] = "Combat",
-        ["Espada"] = "Sword",
-        ["Arma"] = "Gun",
-        ["Fruta"] = "Blox Fruit"
-    }
-    
-    local targetType = weaponMap[_G.Settings.WeaponType]
-    if not targetType then return false end
-    
-    pcall(function()
-        -- Procura na mochila
+    local success = pcall(function()
+        local weaponMap = {
+            ["Estilo de Luta"] = "Melee",
+            ["Espada"] = "Sword",
+            ["Arma"] = "Gun",
+            ["Fruta"] = "Blox Fruit"
+        }
+        
+        local targetType = weaponMap[_G.Settings.WeaponType]
+        
+        if not targetType then return false end
+        
         for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                local toolTip = tool.ToolTip or ""
-                if toolTip == targetType or toolTip:find(targetType) then
-                    LocalPlayer.Character.Humanoid:EquipTool(tool)
-                    return true
-                end
+            if tool:IsA("Tool") and tool.ToolTip == targetType then
+                LocalPlayer.Character.Humanoid:EquipTool(tool)
+                return true
             end
         end
         
-        -- Procura no personagem (já equipada)
         for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
-            if tool:IsA("Tool") then
-                local toolTip = tool.ToolTip or ""
-                if toolTip == targetType or toolTip:find(targetType) then
-                    return true
-                end
+            if tool:IsA("Tool") and tool.ToolTip == targetType then
+                return true
             end
         end
     end)
     
-    return false
+    return success
 end
 
 local function Click()
@@ -416,26 +451,44 @@ local function ActivateBuso()
     end)
 end
 
+-- =========================
+-- FUNÇÃO PARA OBTER BOSSES SPAWNADOS
+-- =========================
 local function GetSpawnedBosses()
     local spawnedBosses = {"All"}
+    
     pcall(function()
         for _, boss in pairs(workspace.Enemies:GetChildren()) do
             if boss:FindFirstChild("Humanoid") and boss:FindFirstChild("HumanoidRootPart") and boss.Humanoid.Health > 0 then
+                local isBoss = false
                 for _, bossName in pairs(BossList) do
-                    if boss.Name == bossName and not table.find(spawnedBosses, boss.Name) then
-                        table.insert(spawnedBosses, boss.Name)
+                    if boss.Name == bossName then
+                        isBoss = true
                         break
                     end
+                end
+                
+                if isBoss and not table.find(spawnedBosses, boss.Name) then
+                    table.insert(spawnedBosses, boss.Name)
                 end
             end
         end
     end)
+    
     return spawnedBosses
 end
 
+-- =========================
+-- FUNÇÃO KATAKURI PROGRESS (SEA 2)
+-- =========================
 local function GetKatakuriProgress()
-    if Sea ~= 2 then return "N/A - Apenas Sea 2" end
+    if Sea ~= 2 then
+        return "N/A - Apenas Sea 2"
+    end
+    
     local progress = 0
+    local total = 500
+    
     pcall(function()
         local remote = GetRemote()
         if remote then
@@ -445,119 +498,100 @@ local function GetKatakuriProgress()
             end
         end
     end)
-    return string.format("%d/500 (%d restantes)", progress, 500 - progress)
+    
+    local remaining = total - progress
+    return string.format("%d/%d (%d restantes)", progress, total, remaining)
 end
 
+-- =========================
+-- TELEPORT ENTRE SEAS
+-- =========================
 local function TeleportToSea(seaNumber)
-    local placeIds = {[1] = 2753915549, [2] = 4442272183, [3] = 7449423635}
-    if not placeIds[seaNumber] then return end
-    if Sea == seaNumber then
-        Notify("✅ Você já está no SEA " .. seaNumber)
+    local placeIds = {
+        [1] = 2753915549,
+        [2] = 4442272183,
+        [3] = 7449423635
+    }
+    
+    if not placeIds[seaNumber] then
+        warn("❌ Sea inválido!")
         return
     end
-    Notify("🚀 Teleportando para SEA " .. seaNumber .. "...")
-    pcall(function()
-        game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+    
+    if Sea == seaNumber then
+        print("✅ Você já está no SEA " .. seaNumber)
+        return
+    end
+    
+    print("🚀 Teleportando para SEA " .. seaNumber .. "...")
+    
+    local success = pcall(function()
+        local remote = GetRemote()
+        if remote then
+            -- Método do jogo para teleportar entre seas
+            remote:InvokeServer("TravelDressrosa")
+            wait(0.5)
+            remote:InvokeServer("TravelZou")
+            wait(0.5)
+            game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+        end
     end)
+    
+    if not success then
+        -- Fallback: teleport direto
+        pcall(function()
+            game:GetService("TeleportService"):Teleport(placeIds[seaNumber], LocalPlayer)
+        end)
+    end
 end
 
 -- =========================
--- WALK ON WATER (ULTRA CORRIGIDO)
+-- WALK ON WATER
 -- =========================
-local WaterConnection = nil
-
-local function EnableWalkOnWater()
-    if WaterConnection then return end
-    
-    WaterConnection = RunService.Heartbeat:Connect(function()
+task.spawn(function()
+    while task.wait() do
         pcall(function()
-            if not _G.Settings.WalkOnWater then return end
-            
-            for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
-                if v:IsA("BasePart") and v.Name:lower():find("water") then
-                    v.CanCollide = true
+            if _G.Settings.WalkOnWater then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v.Name == "Water" and v:IsA("BasePart") then
+                            v.CanCollide = true
+                        end
+                    end
+                end
+            else
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v.Name == "Water" and v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
                 end
             end
         end)
-    end)
-end
-
-local function DisableWalkOnWater()
-    if WaterConnection then
-        WaterConnection:Disconnect()
-        WaterConnection = nil
-    end
-end
-
-task.spawn(function()
-    while task.wait(1) do
-        if _G.Settings.WalkOnWater then
-            EnableWalkOnWater()
-        else
-            DisableWalkOnWater()
-        end
     end
 end)
 
 -- =========================
--- REMOVE FOG (ULTRA CORRIGIDO)
+-- REMOVE FOG
 -- =========================
-local OriginalLighting = {
-    FogEnd = Lighting.FogEnd,
-    FogStart = Lighting.FogStart,
-    Brightness = Lighting.Brightness
-}
-
-local FogConnection = nil
-
-local function EnableRemoveFog()
-    if FogConnection then return end
-    
-    FogConnection = RunService.Heartbeat:Connect(function()
+task.spawn(function()
+    while task.wait() do
         pcall(function()
-            if not _G.Settings.RemoveFog then return end
-            
-            Lighting.FogEnd = 999999
-            Lighting.FogStart = 0
-            Lighting.Brightness = 3
-            Lighting.ClockTime = 14
-            Lighting.GlobalShadows = false
-            
-            -- Remove Atmosphere se existir
-            if Lighting:FindFirstChildOfClass("Atmosphere") then
-                Lighting:FindFirstChildOfClass("Atmosphere"):Destroy()
+            if _G.Settings.RemoveFog then
+                Lighting.FogEnd = 100000
+                Lighting.FogStart = 0
+            else
+                Lighting.FogEnd = 2500
+                Lighting.FogStart = 0
             end
         end)
-    end)
-end
-
-local function DisableRemoveFog()
-    if FogConnection then
-        FogConnection:Disconnect()
-        FogConnection = nil
-    end
-    
-    pcall(function()
-        Lighting.FogEnd = OriginalLighting.FogEnd
-        Lighting.FogStart = OriginalLighting.FogStart
-        Lighting.Brightness = OriginalLighting.Brightness
-    end)
-end
-
-task.spawn(function()
-    while task.wait(0.5) do
-        if _G.Settings.RemoveFog then
-            EnableRemoveFog()
-        else
-            DisableRemoveFog()
-        end
     end
 end)
 
 -- =========================
--- ESP SYSTEMS
+-- ESP FRUTAS
 -- =========================
 local FruitESPs = {}
+
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
@@ -568,6 +602,7 @@ task.spawn(function()
                         billboard.Size = UDim2.new(0, 100, 0, 50)
                         billboard.AlwaysOnTop = true
                         billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
                         local label = Instance.new("TextLabel", billboard)
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
@@ -575,13 +610,13 @@ task.spawn(function()
                         label.Font = Enum.Font.GothamBold
                         label.TextSize = 14
                         label.TextStrokeTransparency = 0
+                        
                         FruitESPs[fruit] = billboard
+                        
                         task.spawn(function()
                             while fruit and fruit.Parent and _G.Settings.ESPFruit do
-                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - fruit.Handle.Position).Magnitude
-                                    label.Text = fruit.Name .. "\n" .. math.floor(distance) .. "m"
-                                end
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - fruit.Handle.Position).Magnitude
+                                label.Text = fruit.Name .. "\n" .. math.floor(distance) .. "m"
                                 task.wait(0.5)
                             end
                         end)
@@ -589,7 +624,9 @@ task.spawn(function()
                 end
             else
                 for fruit, billboard in pairs(FruitESPs) do
-                    if billboard then billboard:Destroy() end
+                    if billboard then
+                        billboard:Destroy()
+                    end
                 end
                 FruitESPs = {}
             end
@@ -597,7 +634,11 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- ESP ILHAS
+-- =========================
 local IslandESPs = {}
+
 task.spawn(function()
     while task.wait(2) do
         pcall(function()
@@ -610,10 +651,12 @@ task.spawn(function()
                         part.Transparency = 1
                         part.Size = Vector3.new(1, 1, 1)
                         part.CFrame = cframe
+                        
                         local billboard = Instance.new("BillboardGui", part)
                         billboard.Size = UDim2.new(0, 100, 0, 50)
                         billboard.AlwaysOnTop = true
                         billboard.StudsOffset = Vector3.new(0, 10, 0)
+                        
                         local label = Instance.new("TextLabel", billboard)
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
@@ -621,13 +664,13 @@ task.spawn(function()
                         label.Font = Enum.Font.GothamBold
                         label.TextSize = 16
                         label.TextStrokeTransparency = 0
-                        IslandESPs[name] = {part = part, label = label}
+                        
+                        IslandESPs[name] = {part = part, billboard = billboard, label = label}
+                        
                         task.spawn(function()
                             while part and part.Parent and _G.Settings.ESPIsland do
-                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - part.Position).Magnitude
-                                    label.Text = name .. "\n" .. math.floor(distance) .. "m"
-                                end
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - part.Position).Magnitude
+                                label.Text = name .. "\n" .. math.floor(distance) .. "m"
                                 task.wait(1)
                             end
                         end)
@@ -635,7 +678,9 @@ task.spawn(function()
                 end
             else
                 for name, data in pairs(IslandESPs) do
-                    if data.part then data.part:Destroy() end
+                    if data.part then
+                        data.part:Destroy()
+                    end
                 end
                 IslandESPs = {}
             end
@@ -643,7 +688,11 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- ESP PLAYER
+-- =========================
 local PlayerESPs = {}
+
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
@@ -654,6 +703,7 @@ task.spawn(function()
                         billboard.Size = UDim2.new(0, 100, 0, 50)
                         billboard.AlwaysOnTop = true
                         billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
                         local label = Instance.new("TextLabel", billboard)
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
@@ -661,13 +711,13 @@ task.spawn(function()
                         label.Font = Enum.Font.GothamBold
                         label.TextSize = 14
                         label.TextStrokeTransparency = 0
+                        
                         PlayerESPs[player] = billboard
+                        
                         task.spawn(function()
                             while player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and _G.Settings.ESPPlayer do
-                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                                    label.Text = player.Name .. "\n" .. math.floor(distance) .. "m"
-                                end
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                                label.Text = player.Name .. "\n" .. math.floor(distance) .. "m"
                                 task.wait(0.5)
                             end
                         end)
@@ -675,7 +725,9 @@ task.spawn(function()
                 end
             else
                 for player, billboard in pairs(PlayerESPs) do
-                    if billboard then billboard:Destroy() end
+                    if billboard then
+                        billboard:Destroy()
+                    end
                 end
                 PlayerESPs = {}
             end
@@ -683,7 +735,11 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- ESP CHEST (BERRY)
+-- =========================
 local ChestESPs = {}
+
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
@@ -691,10 +747,12 @@ task.spawn(function()
                 for _, chest in pairs(workspace:GetChildren()) do
                     if chest.Name:find("Chest") and (chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")) and not ChestESPs[chest] then
                         local chestPart = chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")
+                        
                         local billboard = Instance.new("BillboardGui", chestPart)
                         billboard.Size = UDim2.new(0, 100, 0, 50)
                         billboard.AlwaysOnTop = true
                         billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        
                         local label = Instance.new("TextLabel", billboard)
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
@@ -702,13 +760,13 @@ task.spawn(function()
                         label.Font = Enum.Font.GothamBold
                         label.TextSize = 14
                         label.TextStrokeTransparency = 0
+                        
                         ChestESPs[chest] = billboard
+                        
                         task.spawn(function()
                             while chest and chest.Parent and _G.Settings.ESPChest do
-                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude
-                                    label.Text = "Chest 💰\n" .. math.floor(distance) .. "m"
-                                end
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude
+                                label.Text = "Chest 💰\n" .. math.floor(distance) .. "m"
                                 task.wait(0.5)
                             end
                         end)
@@ -716,7 +774,9 @@ task.spawn(function()
                 end
             else
                 for chest, billboard in pairs(ChestESPs) do
-                    if billboard then billboard:Destroy() end
+                    if billboard then
+                        billboard:Destroy()
+                    end
                 end
                 ChestESPs = {}
             end
@@ -725,7 +785,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- FAST ATTACK
+-- FAST ATTACK LOOP
 -- =========================
 task.spawn(function()
     while task.wait(0.1) do
@@ -741,14 +801,14 @@ task.spawn(function()
 end)
 
 -- =========================
--- AUTO FARM LEVEL (CORRIGIDO)
+-- AUTO FARM LEVEL LOOP (CORRIGIDO)
 -- =========================
 task.spawn(function()
     while task.wait(0.5) do
         if _G.Settings.AutoFarmLevel then
             if _G.Settings.WeaponType == "Nenhum" then
+                warn("⚠️ SELECIONE UM TIPO DE ARMA ANTES DE FARMAR!")
                 _G.Settings.AutoFarmLevel = false
-                Notify("⚠️ SELECIONE UM TIPO DE ARMA!")
                 continue
             end
             
@@ -756,14 +816,19 @@ task.spawn(function()
                 local myLevel = LocalPlayer.Data.Level.Value
                 local questInfo = GetQuestByLevel(myLevel)
                 
-                if not questInfo then return end
+                if not questInfo then 
+                    warn("⚠️ Quest não encontrada para level " .. myLevel)
+                    return 
+                end
                 
                 local questGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
                 if not questGui then return end
+                
                 questGui = questGui:FindFirstChild("Quest")
                 if not questGui then return end
                 
-                if not questGui.Visible or not questGui.Container.QuestTitle.Title.Text:find(questInfo.Quest) then
+                -- Pegar quest se não estiver ativa
+                if not questGui.Visible or questGui.Container.QuestTitle.Title.Text ~= questInfo.Quest then
                     repeat
                         TP(questInfo.Pos)
                         task.wait(0.5)
@@ -778,20 +843,26 @@ task.spawn(function()
                     end
                 end
                 
+                -- Farmar mob
                 if _G.Settings.AutoFarmLevel and questGui.Visible then
                     for _, mob in pairs(workspace.Enemies:GetChildren()) do
                         if mob.Name == questInfo.Mob and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                             
-                            if not EquipWeapon() then
+                            local weaponEquipped = EquipWeapon()
+                            if not weaponEquipped then
+                                warn("⚠️ NÃO FOI POSSÍVEL EQUIPAR ARMA!")
                                 _G.Settings.AutoFarmLevel = false
-                                Notify("⚠️ Arma não equipada!")
                                 break
                             end
                             
                             repeat
                                 task.wait()
-                                if not _G.Settings.AutoFarmLevel or not mob or not mob.Parent or mob.Humanoid.Health <= 0 or not questGui.Visible then break end
                                 
+                                if not _G.Settings.AutoFarmLevel then break end
+                                if not mob or not mob.Parent or mob.Humanoid.Health <= 0 then break end
+                                if not questGui.Visible then break end
+                                
+                                -- Bring mob
                                 if _G.Settings.BringMobs then
                                     pcall(function()
                                         mob.HumanoidRootPart.Size = Vector3.new(60,60,60)
@@ -802,11 +873,13 @@ task.spawn(function()
                                     end)
                                 end
                                 
+                                -- TP pro mob
                                 pcall(function()
                                     LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Settings.FarmDistance, 0)
                                 end)
                                 
                                 _G.Settings.FastAttack = true
+                                
                             until not mob.Parent or mob.Humanoid.Health <= 0 or not _G.Settings.AutoFarmLevel or not questGui.Visible
                             
                             _G.Settings.FastAttack = false
@@ -821,7 +894,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- AUTO FARM BOSS
+-- AUTO FARM BOSS LOOP
 -- =========================
 task.spawn(function()
     while task.wait(0.5) do
@@ -832,14 +905,21 @@ task.spawn(function()
                         if _G.Settings.SelectedBoss == "All" or boss.Name == _G.Settings.SelectedBoss then
                             repeat
                                 task.wait()
+                                
                                 if not _G.Settings.AutoFarmBoss then break end
+                                
                                 EquipWeapon()
+                                
                                 boss.HumanoidRootPart.Size = Vector3.new(60,60,60)
                                 boss.HumanoidRootPart.Transparency = 1
                                 boss.Humanoid.WalkSpeed = 0
+                                
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0)
+                                
                                 _G.Settings.FastAttack = true
+                                
                             until not boss.Parent or boss.Humanoid.Health <= 0 or not _G.Settings.AutoFarmBoss
+                            
                             _G.Settings.FastAttack = false
                         end
                     end
@@ -852,7 +932,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- AUTO CHEST
+-- AUTO CHEST LOOP (CORRIGIDO)
 -- =========================
 task.spawn(function()
     while task.wait(0.5) do
@@ -861,17 +941,18 @@ task.spawn(function()
                 for _, chest in pairs(workspace:GetChildren()) do
                     if chest.Name:find("Chest") and (chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")) then
                         local chestPart = chest:FindFirstChild("Part") or chest:FindFirstChild("MeshPart")
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            if (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude < 5000 then
-                                TP(chestPart.CFrame * CFrame.new(0, 3, 0))
-                                task.wait(0.2)
-                                if (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude < 5 then
-                                    local remote = GetRemote()
-                                    if remote then
-                                        remote:InvokeServer("OpenChest", chest.Name)
-                                    end
-                                    task.wait(1)
+                        
+                        if (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude < 5000 then
+                            TP(chestPart.CFrame * CFrame.new(0, 3, 0))
+                            task.wait(0.2)
+                            
+                            -- Tentar abrir o chest
+                            if (LocalPlayer.Character.HumanoidRootPart.Position - chestPart.Position).Magnitude < 5 then
+                                local remote = GetRemote()
+                                if remote then
+                                    remote:InvokeServer("OpenChest", chest.Name)
                                 end
+                                task.wait(1)
                             end
                         end
                     end
@@ -882,7 +963,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- FRUIT SYSTEMS
+-- FRUIT SNIPER
 -- =========================
 task.spawn(function()
     while task.wait(1) do
@@ -899,6 +980,9 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- AUTO STORE FRUIT
+-- =========================
 task.spawn(function()
     while task.wait(2) do
         if _G.Settings.AutoStoreFruit then
@@ -917,6 +1001,9 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- AUTO BUY FRUIT
+-- =========================
 task.spawn(function()
     while task.wait(10) do
         if _G.Settings.AutoBuyFruit then
@@ -930,6 +1017,9 @@ task.spawn(function()
     end
 end)
 
+-- =========================
+-- AUTO RANDOM FRUIT
+-- =========================
 task.spawn(function()
     while task.wait(2) do
         if _G.Settings.AutoRandomFruit then
@@ -944,9 +1034,17 @@ task.spawn(function()
 end)
 
 -- =========================
--- SEA EVENT
+-- SEA EVENT SYSTEM
 -- =========================
-local SeaDepthPositions = {["Mar 1"] = -50, ["Mar 2"] = -100, ["Mar 3"] = -200, ["Mar 4"] = -400, ["Mar 5"] = -600, ["Mar 6"] = -800}
+local SeaDepthPositions = {
+    ["Mar 1"] = -50,
+    ["Mar 2"] = -100,
+    ["Mar 3"] = -200,
+    ["Mar 4"] = -400,
+    ["Mar 5"] = -600,
+    ["Mar 6"] = -800
+}
+
 local circleRadius = 300
 local circleAngle = 0
 
@@ -955,14 +1053,22 @@ task.spawn(function()
         if _G.Settings.SeaEventActive and _G.Settings.SeaEventBoat ~= "Nenhum" then
             pcall(function()
                 local boat = workspace.Boats:FindFirstChild(_G.Settings.SeaEventBoat)
+                
                 if boat and boat:FindFirstChild("VehicleSeat") then
                     local depth = SeaDepthPositions[_G.Settings.SeaDepth] or -50
+                    
+                    -- Circular motion
                     circleAngle = circleAngle + 0.05
-                    if circleAngle >= math.pi * 2 then circleAngle = 0 end
+                    if circleAngle >= math.pi * 2 then
+                        circleAngle = 0
+                    end
+                    
                     local xOffset = math.cos(circleAngle) * circleRadius
                     local zOffset = math.sin(circleAngle) * circleRadius
+                    
                     local currentPos = boat.VehicleSeat.CFrame.Position
                     local newCFrame = CFrame.new(currentPos.X + xOffset, depth, currentPos.Z + zOffset)
+                    
                     boat.VehicleSeat.CFrame = newCFrame
                 end
             end)
@@ -978,18 +1084,29 @@ task.spawn(function()
         if _G.Settings.AutoPVP and _G.Settings.SelectedPlayer then
             pcall(function()
                 local targetPlayer = Players:FindFirstChild(_G.Settings.SelectedPlayer)
+                
                 if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+                    
                     EquipWeapon()
+                    
                     repeat
                         task.wait()
-                        if not _G.Settings.AutoPVP or not targetPlayer.Character or targetPlayer.Character.Humanoid.Health <= 0 then break end
+                        
+                        if not _G.Settings.AutoPVP then break end
+                        if not targetPlayer.Character or targetPlayer.Character.Humanoid.Health <= 0 then break end
+                        
+                        -- Safe mode check
                         if _G.Settings.SafeMode and LocalPlayer.Character.Humanoid.Health < LocalPlayer.Character.Humanoid.MaxHealth * 0.3 then
-                            Notify("⚠️ Safe Mode ativado - vida baixa!")
+                            print("⚠️ Safe Mode ativado - vida baixa!")
                             break
                         end
+                        
                         LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 5)
+                        
                         _G.Settings.FastAttack = true
+                        
                     until not targetPlayer.Character or targetPlayer.Character.Humanoid.Health <= 0 or not _G.Settings.AutoPVP
+                    
                     _G.Settings.FastAttack = false
                 end
             end)
@@ -1000,21 +1117,7 @@ task.spawn(function()
 end)
 
 -- =========================
--- ANTI AFK
--- =========================
-task.spawn(function()
-    while task.wait(60) do
-        if _G.Settings.AntiAFK then
-            pcall(function()
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
-            end)
-        end
-    end
-end)
-
--- =========================
--- GUI
+-- GUI (MOBILE OPTIMIZED)
 -- =========================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "LagTeckHub"
@@ -1037,11 +1140,11 @@ end
 Gui.Parent = parent
 
 -- =========================
--- BOLINHA (REDUZIDA)
+-- BOLINHA (MOBILE FRIENDLY)
 -- =========================
 local Bubble = Instance.new("ImageButton", Gui)
-Bubble.Size = UDim2.fromOffset(50, 50)
-Bubble.Position = UDim2.new(0.05, 0, 0.5, -25)
+Bubble.Size = UDim2.fromOffset(70, 70)
+Bubble.Position = UDim2.new(0.05, 0, 0.5, -35)
 Bubble.Image = "rbxassetid://118708232212462"
 Bubble.BackgroundColor3 = Config.Tema.Botao
 Bubble.BorderSizePixel = 0
@@ -1054,160 +1157,82 @@ local BubbleCorner = Instance.new("UICorner", Bubble)
 BubbleCorner.CornerRadius = UDim.new(1, 0)
 
 -- =========================
--- MAIN WINDOW (QUADRADO E ARRASTÁVEL)
+-- MAIN WINDOW (MOBILE SIZE)
 -- =========================
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromOffset(0, 0)
-Main.Position = UDim2.new(0.5, -250, 0.5, -300)
+Main.Size = UDim2.fromScale(0, 0)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.BackgroundColor3 = Config.Tema.Fundo
-Main.BackgroundTransparency = 0.1
+Main.BackgroundTransparency = 0.35
 Main.BorderSizePixel = 0
 Main.Visible = false
 Main.ZIndex = 1000
-Main.Active = true
 
 local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UDim.new(0, 12)
-
--- Tornar o painel arrastável
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-Main.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
+MainCorner.CornerRadius = UDim.new(0, 16)
 
 -- =========================
--- TOP BAR COM BOTÕES
+-- TOP BAR
 -- =========================
 local Top = Instance.new("Frame", Main)
-Top.Size = UDim2.new(1, 0, 0, 45)
+Top.Size = UDim2.new(1, 0, 0, 50)
 Top.BackgroundColor3 = Config.Tema.Secundario
-Top.BackgroundTransparency = 0.1
+Top.BackgroundTransparency = 0.2
 Top.BorderSizePixel = 0
 
 local TopCorner = Instance.new("UICorner", Top)
-TopCorner.CornerRadius = UDim.new(0, 12)
+TopCorner.CornerRadius = UDim.new(0, 16)
 
 local Title = Instance.new("TextLabel", Top)
-Title.Size = UDim2.new(1, -150, 1, 0)
+Title.Size = UDim2.new(1, -140, 1, 0)
 Title.Position = UDim2.fromOffset(10, 0)
-Title.Text = "LagTeck | discord.gg/RnZ6XHHFj7"
+Title.Text = "Lag Teck Hub v2.0"
 Title.TextColor3 = Config.Tema.Texto
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextWrapped = true
-
-local DiscordLink = Instance.new("TextLabel", Top)
-DiscordLink.Size = UDim2.new(0, 150, 0, 12)
-DiscordLink.Position = UDim2.new(0, 10, 1, -15)
-DiscordLink.Text = "discord.gg/RnZ6XHHFj7"
-DiscordLink.TextColor3 = Color3.fromRGB(150, 150, 150)
-DiscordLink.BackgroundTransparency = 1
-DiscordLink.Font = Enum.Font.Gotham
-DiscordLink.TextSize = 9
-DiscordLink.TextXAlignment = Enum.TextXAlignment.Left
 
 local SeaLabel = Instance.new("TextLabel", Top)
-SeaLabel.Size = UDim2.fromOffset(70, 30)
-SeaLabel.Position = UDim2.new(1, -175, 0.5, -15)
+SeaLabel.Size = UDim2.fromOffset(80, 35)
+SeaLabel.Position = UDim2.new(1, -120, 0.5, -17.5)
 SeaLabel.Text = "SEA " .. Sea
 SeaLabel.TextColor3 = Color3.new(1, 1, 1)
 SeaLabel.BackgroundColor3 = Config.Tema.Ativo
 SeaLabel.Font = Enum.Font.GothamBold
-SeaLabel.TextSize = 12
+SeaLabel.TextSize = 13
 SeaLabel.BorderSizePixel = 0
 
 local SeaCorner = Instance.new("UICorner", SeaLabel)
-SeaCorner.CornerRadius = UDim.new(0, 6)
+SeaCorner.CornerRadius = UDim.new(0, 8)
 
--- Botão Minimizar
-local MinBtn = Instance.new("TextButton", Top)
-MinBtn.Size = UDim2.fromOffset(30, 30)
-MinBtn.Position = UDim2.new(1, -100, 0.5, -15)
-MinBtn.Text = "−"
-MinBtn.TextSize = 18
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-MinBtn.BorderSizePixel = 0
-
-local MinCorner = Instance.new("UICorner", MinBtn)
-MinCorner.CornerRadius = UDim.new(0, 6)
-
--- Botão Expandir
-local MaxBtn = Instance.new("TextButton", Top)
-MaxBtn.Size = UDim2.fromOffset(30, 30)
-MaxBtn.Position = UDim2.new(1, -65, 0.5, -15)
-MaxBtn.Text = "+"
-MaxBtn.TextSize = 18
-MaxBtn.Font = Enum.Font.GothamBold
-MaxBtn.TextColor3 = Color3.new(1, 1, 1)
-MaxBtn.BackgroundColor3 = Color3.fromRGB(100, 150, 100)
-MaxBtn.BorderSizePixel = 0
-MaxBtn.Visible = false
-
-local MaxCorner = Instance.new("UICorner", MaxBtn)
-MaxCorner.CornerRadius = UDim.new(0, 6)
-
--- Botão Fechar
 local CloseBtn = Instance.new("TextButton", Top)
-CloseBtn.Size = UDim2.fromOffset(30, 30)
-CloseBtn.Position = UDim2.new(1, -30, 0.5, -15)
+CloseBtn.Size = UDim2.fromOffset(35, 35)
+CloseBtn.Position = UDim2.new(1, -40, 0.5, -17.5)
 CloseBtn.Text = "✕"
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 16
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextColor3 = Color3.new(1, 1, 1)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.BorderSizePixel = 0
 
 local CloseCorner = Instance.new("UICorner", CloseBtn)
-CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.CornerRadius = UDim.new(0, 8)
 
 -- =========================
 -- BODY
 -- =========================
 local Body = Instance.new("Frame", Main)
-Body.Position = UDim2.fromOffset(0, 50)
-Body.Size = UDim2.new(1, 0, 1, -50)
+Body.Position = UDim2.fromOffset(0, 55)
+Body.Size = UDim2.new(1, 0, 1, -55)
 Body.BackgroundTransparency = 1
 
 -- =========================
 -- SEARCH
 -- =========================
 local Search = Instance.new("TextBox", Body)
-Search.Size = UDim2.new(1, -20, 0, 35)
+Search.Size = UDim2.new(1, -20, 0, 40)
 Search.Position = UDim2.fromOffset(10, 5)
 Search.PlaceholderText = "🔍 Pesquisar..."
 Search.Text = ""
@@ -1216,66 +1241,65 @@ Search.BackgroundTransparency = 0.3
 Search.TextColor3 = Config.Tema.Texto
 Search.BorderSizePixel = 0
 Search.Font = Enum.Font.Gotham
-Search.TextSize = 12
+Search.TextSize = 13
 
 local SearchCorner = Instance.new("UICorner", Search)
-SearchCorner.CornerRadius = UDim.new(0, 8)
+SearchCorner.CornerRadius = UDim.new(0, 10)
 
 -- =========================
 -- TABS
 -- =========================
 local TabBar = Instance.new("ScrollingFrame", Body)
-TabBar.Position = UDim2.fromOffset(10, 45)
-TabBar.Size = UDim2.new(0, 90, 1, -55)
+TabBar.Position = UDim2.fromOffset(10, 50)
+TabBar.Size = UDim2.new(0, 100, 1, -60)
 TabBar.BackgroundTransparency = 1
 TabBar.BorderSizePixel = 0
 TabBar.ScrollBarThickness = 3
 TabBar.CanvasSize = UDim2.fromOffset(0, 0)
 
 local TabLayout = Instance.new("UIListLayout", TabBar)
-TabLayout.Padding = UDim.new(0, 4)
+TabLayout.Padding = UDim.new(0, 5)
 
 TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabBar.CanvasSize = UDim2.fromOffset(0, TabLayout.AbsoluteContentSize.Y + 10)
 end)
 
 local Content = Instance.new("Frame", Body)
-Content.Position = UDim2.fromOffset(110, 45)
-Content.Size = UDim2.new(1, -120, 1, -55)
+Content.Position = UDim2.fromOffset(120, 50)
+Content.Size = UDim2.new(1, -130, 1, -60)
 Content.BackgroundTransparency = 1
 
 local Tabs = {}
-local SelectedOptions = {}
 
 -- =========================
 -- CRIAR ABA
 -- =========================
 local function CriarAba(nome)
     local Btn = Instance.new("TextButton", TabBar)
-    Btn.Size = UDim2.new(1, 0, 0, 35)
+    Btn.Size = UDim2.new(1, 0, 0, 40)
     Btn.Text = nome
     Btn.BackgroundColor3 = Config.Tema.Botao
     Btn.BackgroundTransparency = 0.3
     Btn.TextColor3 = Config.Tema.Texto
     Btn.BorderSizePixel = 0
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 9
+    Btn.TextSize = 10
     Btn.AutoButtonColor = false
 
     local BtnCorner = Instance.new("UICorner", Btn)
-    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.CornerRadius = UDim.new(0, 8)
 
     local Frame = Instance.new("ScrollingFrame", Content)
     Frame.Size = UDim2.fromScale(1, 1)
     Frame.CanvasSize = UDim2.fromScale(0, 0)
-    Frame.ScrollBarThickness = 4
+    Frame.ScrollBarThickness = 5
     Frame.ScrollBarImageColor3 = Config.Tema.Ativo
     Frame.Visible = false
     Frame.BackgroundTransparency = 1
     Frame.BorderSizePixel = 0
 
     local Layout = Instance.new("UIListLayout", Frame)
-    Layout.Padding = UDim.new(0, 5)
+    Layout.Padding = UDim.new(0, 6)
     
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Frame.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
@@ -1295,70 +1319,32 @@ local function CriarAba(nome)
 end
 
 -- =========================
--- SISTEMA DE OPÇÕES SELECIONADAS
+-- COMPONENTES (MOBILE OPTIMIZED)
 -- =========================
-local SelectedFrame
-
-local function AddToSelected(name, settingKey)
-    if SelectedFrame and not SelectedOptions[name] then
-        local Box = Instance.new("Frame", SelectedFrame)
-        Box.Size = UDim2.new(1, 0, 0, 40)
-        Box.BackgroundColor3 = Config.Tema.Ativo
-        Box.BackgroundTransparency = 0.5
-        Box.BorderSizePixel = 0
-        
-        local BoxCorner = Instance.new("UICorner", Box)
-        BoxCorner.CornerRadius = UDim.new(0, 6)
-        
-        local Label = Instance.new("TextLabel", Box)
-        Label.Size = UDim2.new(1, -10, 1, 0)
-        Label.Position = UDim2.fromOffset(5, 0)
-        Label.Text = "✓ " .. name
-        Label.TextColor3 = Color3.new(1, 1, 1)
-        Label.BackgroundTransparency = 1
-        Label.Font = Enum.Font.GothamBold
-        Label.TextSize = 10
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextWrapped = true
-        
-        SelectedOptions[name] = {Box = Box, SettingKey = settingKey}
-    end
-end
-
-local function RemoveFromSelected(name)
-    if SelectedOptions[name] then
-        SelectedOptions[name].Box:Destroy()
-        SelectedOptions[name] = nil
-    end
-end
-
--- =========================
--- COMPONENTES
--- =========================
-local function Toggle(parent, texto, callback, settingKey)
+local function Toggle(parent, texto, callback)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1, 0, 0, 45)
+    Box.Size = UDim2.new(1, 0, 0, 50)
     Box.BackgroundColor3 = Config.Tema.Botao
     Box.BackgroundTransparency = 0.3
     Box.BorderSizePixel = 0
     
     local BoxCorner = Instance.new("UICorner", Box)
-    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(1, -60, 1, 0)
-    Label.Position = UDim2.fromOffset(8, 0)
+    Label.Size = UDim2.new(1, -65, 1, 0)
+    Label.Position = UDim2.fromOffset(10, 0)
     Label.Text = texto
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 10
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.TextWrapped = true
 
     local Btn = Instance.new("TextButton", Box)
-    Btn.Size = UDim2.fromOffset(40, 20)
-    Btn.Position = UDim2.new(1, -45, 0.5, -10)
+    Btn.Size = UDim2.fromOffset(45, 22)
+    Btn.Position = UDim2.new(1, -50, 0.5, -11)
     Btn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
     Btn.Text = ""
     Btn.BorderSizePixel = 0
@@ -1368,7 +1354,7 @@ local function Toggle(parent, texto, callback, settingKey)
     BtnCorner.CornerRadius = UDim.new(1, 0)
     
     local Circle = Instance.new("Frame", Btn)
-    Circle.Size = UDim2.fromOffset(16, 16)
+    Circle.Size = UDim2.fromOffset(18, 18)
     Circle.Position = UDim2.fromOffset(2, 2)
     Circle.BackgroundColor3 = Color3.new(1, 1, 1)
     Circle.BorderSizePixel = 0
@@ -1378,89 +1364,71 @@ local function Toggle(parent, texto, callback, settingKey)
     
     local enabled = false
     
-    -- Carregar estado salvo
-    if settingKey and _G.Settings[settingKey] then
-        enabled = true
-        Circle.Position = UDim2.fromOffset(22, 2)
-        Btn.BackgroundColor3 = Config.Tema.Ativo
-        AddToSelected(texto, settingKey)
-    end
-    
     Btn.MouseButton1Click:Connect(function()
         enabled = not enabled
         
         if enabled then
-            Tween(Circle, 0.2, {Position = UDim2.fromOffset(22, 2)})
+            Tween(Circle, 0.2, {Position = UDim2.fromOffset(25, 2)})
             Tween(Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
-            Notify("✅ " .. texto .. " ATIVADO!")
-            if settingKey then
-                AddToSelected(texto, settingKey)
-            end
         else
             Tween(Circle, 0.2, {Position = UDim2.fromOffset(2, 2)})
             Tween(Btn, 0.2, {BackgroundColor3 = Color3.fromRGB(120, 120, 120)})
-            Notify("❌ " .. texto .. " DESATIVADO!")
-            if settingKey then
-                RemoveFromSelected(texto)
-            end
         end
         
         if callback then
             task.spawn(function() callback(enabled) end)
         end
-        
-        SaveConfig()
     end)
 end
 
-local function Dropdown(parent, texto, options, callback, settingKey)
+local function Dropdown(parent, texto, options, callback)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1, 0, 0, 45)
+    Box.Size = UDim2.new(1, 0, 0, 50)
     Box.BackgroundColor3 = Config.Tema.Botao
     Box.BackgroundTransparency = 0.3
     Box.BorderSizePixel = 0
     
     local BoxCorner = Instance.new("UICorner", Box)
-    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(0.4, 0, 1, 0)
-    Label.Position = UDim2.fromOffset(8, 0)
+    Label.Size = UDim2.new(0.45, 0, 1, 0)
+    Label.Position = UDim2.fromOffset(10, 0)
     Label.Text = texto
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 9
+    Label.TextSize = 10
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.TextWrapped = true
 
     local Btn = Instance.new("TextButton", Box)
-    Btn.Size = UDim2.new(0.55, 0, 0, 32)
-    Btn.Position = UDim2.new(0.43, 0, 0.5, -16)
-    Btn.Text = settingKey and _G.Settings[settingKey] or options[1] or "..."
+    Btn.Size = UDim2.new(0.5, -10, 0, 38)
+    Btn.Position = UDim2.new(0.5, 0, 0.5, -19)
+    Btn.Text = options[1] or "..."
     Btn.BackgroundColor3 = Config.Tema.Secundario
     Btn.BackgroundTransparency = 0.2
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 8
+    Btn.TextSize = 9
     Btn.BorderSizePixel = 0
     Btn.TextTruncate = Enum.TextTruncate.AtEnd
     
     local BtnCorner = Instance.new("UICorner", Btn)
-    BtnCorner.CornerRadius = UDim.new(0, 5)
+    BtnCorner.CornerRadius = UDim.new(0, 6)
     
     local DropScroll = Instance.new("ScrollingFrame", Gui)
-    DropScroll.Size = UDim2.new(0, 180, 0, 0)
+    DropScroll.Size = UDim2.new(0, 200, 0, 0)
     DropScroll.Position = UDim2.new(0.5, 0, 0.5, 0)
     DropScroll.BackgroundColor3 = Config.Tema.Secundario
     DropScroll.BorderSizePixel = 0
     DropScroll.Visible = false
     DropScroll.ZIndex = 10000
-    DropScroll.ScrollBarThickness = 3
-    DropScroll.CanvasSize = UDim2.fromOffset(0, #options * 35)
+    DropScroll.ScrollBarThickness = 4
+    DropScroll.CanvasSize = UDim2.fromOffset(0, #options * 38)
     
     local DropCorner = Instance.new("UICorner", DropScroll)
-    DropCorner.CornerRadius = UDim.new(0, 5)
+    DropCorner.CornerRadius = UDim.new(0, 6)
     
     local DropLayout = Instance.new("UIListLayout", DropScroll)
     DropLayout.Padding = UDim.new(0, 2)
@@ -1473,19 +1441,19 @@ local function Dropdown(parent, texto, options, callback, settingKey)
         
         if isOpen then
             local btnPos = Btn.AbsolutePosition
-            DropScroll.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + 37)
-            DropScroll.Size = UDim2.new(0, 180, 0, math.min(#options * 35, 220))
+            DropScroll.Position = UDim2.fromOffset(btnPos.X, btnPos.Y + 42)
+            DropScroll.Size = UDim2.new(0, 200, 0, math.min(#options * 38, 250))
         end
     end)
     
     for _, option in pairs(options) do
         local OptBtn = Instance.new("TextButton", DropScroll)
-        OptBtn.Size = UDim2.new(1, 0, 0, 33)
+        OptBtn.Size = UDim2.new(1, 0, 0, 36)
         OptBtn.Text = option
         OptBtn.BackgroundColor3 = Config.Tema.Botao
         OptBtn.TextColor3 = Config.Tema.Texto
         OptBtn.Font = Enum.Font.Gotham
-        OptBtn.TextSize = 8
+        OptBtn.TextSize = 9
         OptBtn.BorderSizePixel = 0
         OptBtn.TextTruncate = Enum.TextTruncate.AtEnd
         
@@ -1493,11 +1461,10 @@ local function Dropdown(parent, texto, options, callback, settingKey)
             Btn.Text = option
             DropScroll.Visible = false
             isOpen = false
-            Notify("✅ " .. texto .. ": " .. option)
+            
             if callback then
                 task.spawn(function() callback(option) end)
             end
-            SaveConfig()
         end)
     end
     
@@ -1506,17 +1473,17 @@ end
 
 local function Button(parent, texto, callback)
     local Btn = Instance.new("TextButton", parent)
-    Btn.Size = UDim2.new(1, 0, 0, 45)
+    Btn.Size = UDim2.new(1, 0, 0, 50)
     Btn.Text = texto
     Btn.BackgroundColor3 = Config.Tema.Ativo
     Btn.BackgroundTransparency = 0.3
     Btn.TextColor3 = Config.Tema.Texto
     Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 11
+    Btn.TextSize = 12
     Btn.BorderSizePixel = 0
     
     local BtnCorner = Instance.new("UICorner", Btn)
-    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.CornerRadius = UDim.new(0, 8)
     
     Btn.MouseButton1Click:Connect(function()
         if callback then
@@ -1527,13 +1494,13 @@ end
 
 local function Section(parent, texto)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1, 0, 0, 32)
+    Box.Size = UDim2.new(1, 0, 0, 38)
     Box.BackgroundColor3 = Config.Tema.AzulClaro
     Box.BackgroundTransparency = 0.5
     Box.BorderSizePixel = 0
     
     local BoxCorner = Instance.new("UICorner", Box)
-    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.CornerRadius = UDim.new(0, 8)
 
     local Label = Instance.new("TextLabel", Box)
     Label.Size = UDim2.new(1, 0, 1, 0)
@@ -1541,10 +1508,13 @@ local function Section(parent, texto)
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Color3.new(1, 1, 1)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Center
 end
 
+-- =========================
+-- FUNÇÕES AUXILIARES PARA ABA PRINCIPAL
+-- =========================
 local function FormatNumber(num)
     if num >= 1000000000 then
         return string.format("%.1fB", num / 1000000000)
@@ -1575,69 +1545,63 @@ end
 
 local function InfoBox(parent, title, value, color)
     local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(1, 0, 0, 55)
+    Box.Size = UDim2.new(1, 0, 0, 60)
+    Box.BackgroundColor3 = Config.Tema.Botao
+    Box.BackgroundTransparency = 0.3
+    Box.BorderSizePixel = 0
+    
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 10)
+    
+    local Title = Instance.new("TextLabel", Box)
+    Title.Size = UDim2.new(1, -20, 0.4, 0)
+    Title.Position = UDim2.fromOffset(10, 5)
+    Title.Text = title
+    Title.BackgroundTransparency = 1
+    Title.TextColor3 = Color3.fromRGB(150, 150, 150)
+    Title.Font = Enum.Font.Gotham
+    Title.TextSize = 10
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local Value = Instance.new("TextLabel", Box)
+    Value.Size = UDim2.new(1, -20, 0.5, 0)
+    Value.Position = UDim2.new(0, 10, 0.5, 0)
+    Value.Text = value
+    Value.BackgroundTransparency = 1
+    Value.TextColor3 = color or Config.Tema.Texto
+    Value.Font = Enum.Font.GothamBold
+    Value.TextSize = 16
+    Value.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return {Box = Box, ValueLabel = Value}
+end
+
+local function StatusIndicator(parent, title, isActive)
+    local Box = Instance.new("Frame", parent)
+    Box.Size = UDim2.new(0.48, 0, 0, 45)
     Box.BackgroundColor3 = Config.Tema.Botao
     Box.BackgroundTransparency = 0.3
     Box.BorderSizePixel = 0
     
     Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 8)
     
-    local Title = Instance.new("TextLabel", Box)
-    Title.Size = UDim2.new(1, -15, 0.4, 0)
-    Title.Position = UDim2.fromOffset(8, 4)
-    Title.Text = title
-    Title.BackgroundTransparency = 1
-    Title.TextColor3 = Color3.fromRGB(150, 150, 150)
-    Title.Font = Enum.Font.Gotham
-    Title.TextSize = 9
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local Value = Instance.new("TextLabel", Box)
-    Value.Size = UDim2.new(1, -15, 0.5, 0)
-    Value.Position = UDim2.new(0, 8, 0.5, 0)
-    Value.Text = value
-    Value.BackgroundTransparency = 1
-    Value.TextColor3 = color or Config.Tema.Texto
-    Value.Font = Enum.Font.GothamBold
-    Value.TextSize = 14
-    Value.TextXAlignment = Enum.TextXAlignment.Left
-    
-    return {Box = Box, ValueLabel = Value}
-end
-
-local function StatusIndicator(parent, title, isActive, requiresSea3)
-    local Box = Instance.new("Frame", parent)
-    Box.Size = UDim2.new(0.48, 0, 0, 40)
-    Box.BackgroundColor3 = Config.Tema.Botao
-    Box.BackgroundTransparency = 0.3
-    Box.BorderSizePixel = 0
-    
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
-    
     local Indicator = Instance.new("Frame", Box)
-    Indicator.Size = UDim2.fromOffset(10, 10)
-    Indicator.Position = UDim2.fromOffset(8, 15)
+    Indicator.Size = UDim2.fromOffset(12, 12)
+    Indicator.Position = UDim2.fromOffset(10, 17)
     Indicator.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     Indicator.BorderSizePixel = 0
     
     Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
     
     local Label = Instance.new("TextLabel", Box)
-    Label.Size = UDim2.new(1, -25, 1, 0)
-    Label.Position = UDim2.fromOffset(23, 0)
+    Label.Size = UDim2.new(1, -35, 1, 0)
+    Label.Position = UDim2.fromOffset(30, 0)
     Label.Text = title
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Config.Tema.Texto
     Label.Font = Enum.Font.Gotham
-    Label.TextSize = 9
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.TextWrapped = true
-    
-    if requiresSea3 and Sea ~= 3 then
-        Label.Text = title .. "\n⚠️ SEA 3 APENAS"
-        Label.TextColor3 = Color3.fromRGB(255, 150, 0)
-        Indicator.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    end
     
     return {Box = Box, Indicator = Indicator, Label = Label}
 end
@@ -1645,66 +1609,125 @@ end
 -- =========================
 -- CRIANDO ABAS
 -- =========================
-local PrincipalTab = CriarAba("🏠 Home")
-local SelectedTab = CriarAba("✓ Ativos")
+local PrincipalTab = CriarAba("🏠 Principal")  
 local FarmTab = CriarAba("🌴 Farm")
 local FruitTab = CriarAba("🍏 Frutas")
 local TeleportTab = CriarAba("🧭 TP")
-local SeaEventTab = CriarAba("🦈 Sea")
+local SeaEventTab = CriarAba("🦈 Sea Event")
 local ESPTab = CriarAba("👁️ ESP")
 local PlayerTab = CriarAba("🛡️ Config")
 local PVPTab = CriarAba("⚔️ PVP")
-local MissoesTab = CriarAba("📋 Missões")
 
-SelectedFrame = SelectedTab
-
+-- Definir aba Principal como primeira
 for _, v in pairs(Tabs) do
     v.Frame.Visible = false
     Tween(v.Btn, 0.2, {BackgroundColor3 = Config.Tema.Botao})
 end
-Tabs["🏠 Home"].Frame.Visible = true
-Tween(Tabs["🏠 Home"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
+Tabs["🏠 Principal"].Frame.Visible = true
+Tween(Tabs["🏠 Principal"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
 
 -- =========================
 -- ABA PRINCIPAL
 -- =========================
+Section(PrincipalTab, "Comunidade Discord")
+
 Button(PrincipalTab, "🎮 Entrar no Discord", function()
     local url = "https://discord.gg/RnZ6XHHFj7"
+    
+    -- Método 1: Copiar para clipboard
     pcall(function()
         setclipboard(url)
+        print("✅ Link do Discord copiado!")
     end)
-    Notify("✅ Link do Discord copiado!\n" .. url)
+    
+    -- Método 2: Mostrar no console
+    print("🔗 Link do Discord: " .. url)
+    print("📋 Cole no seu navegador!")
+    
+    -- Método 3: Abrir no navegador (para executores que suportam)
+    pcall(function()
+        request({
+            Url = "http://127.0.0.1:6463/rpc?v=1",
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["Origin"] = "https://discord.com"
+            },
+            Body = HttpService:JSONEncode({
+                cmd = "INVITE_BROWSER",
+                args = {code = "RnZ6XHHFj7"},
+                nonce = HttpService:GenerateGUID(false)
+            })
+        })
+    end)
 end)
 
-Section(PrincipalTab, "Perfil do Jogador")
+local DiscordInfo = Instance.new("Frame", PrincipalTab)
+DiscordInfo.Size = UDim2.new(1, 0, 0, 80)
+DiscordInfo.BackgroundColor3 = Config.Tema.Secundario
+DiscordInfo.BackgroundTransparency = 0.3
+DiscordInfo.BorderSizePixel = 0
 
-local PlayerNameBox = InfoBox(PrincipalTab, "👤 Nome", LocalPlayer.Name, Color3.fromRGB(100, 200, 255))
-local MoneyBox = InfoBox(PrincipalTab, "💰 Dinheiro", "...", Color3.fromRGB(255, 215, 0))
-local FragBox = InfoBox(PrincipalTab, "💎 Fragmentos", "...", Color3.fromRGB(100, 200, 255))
+Instance.new("UICorner", DiscordInfo).CornerRadius = UDim.new(0, 10)
+
+local DiscordText = Instance.new("TextLabel", DiscordInfo)
+DiscordText.Size = UDim2.new(1, -20, 1, -20)
+DiscordText.Position = UDim2.fromOffset(10, 10)
+DiscordText.Text = "💬 Discord Lag Teck\n👥 Membros ativos e suporte\n🎯 Updates e novidades"
+DiscordText.BackgroundTransparency = 1
+DiscordText.TextColor3 = Config.Tema.Texto
+DiscordText.Font = Enum.Font.Gotham
+DiscordText.TextSize = 12
+DiscordText.TextWrapped = true
+DiscordText.TextYAlignment = Enum.TextYAlignment.Top
+
+Section(PrincipalTab, "Informações de Tempo")
+
+local UptimeBox = InfoBox(PrincipalTab, "⏱️ Tempo do Servidor (00:00:00)", GetServerUptime(), Config.Tema.AzulClaro)
+local SessionBox = InfoBox(PrincipalTab, "🕐 Sua Sessão (HH:MM:SS)", GetSessionTime(), Color3.fromRGB(0, 255, 0))
 
 task.spawn(function()
-    while task.wait(5) do
+    while task.wait(1) do
         pcall(function()
-            MoneyBox.ValueLabel.Text = "$ " .. FormatNumber(LocalPlayer.Data.Beli.Value)
-            FragBox.ValueLabel.Text = FormatNumber(LocalPlayer.Data.Fragments.Value)
+            UptimeBox.ValueLabel.Text = GetServerUptime()
+            SessionBox.ValueLabel.Text = GetSessionTime()
         end)
     end
 end)
 
-Section(PrincipalTab, "Status de Eventos")
+Section(PrincipalTab, "Perfil do Jogador")
 
-local StatusGrid = Instance.new("Frame", PrincipalTab)
-StatusGrid.Size = UDim2.new(1, 0, 0, 90)
-StatusGrid.BackgroundTransparency = 1
+local PlayerNameBox = InfoBox(PrincipalTab, "👤 Nome do Jogador", LocalPlayer.Name, Color3.fromRGB(100, 200, 255))
+local MoneyBox = InfoBox(PrincipalTab, "💰 Dinheiro", "Carregando...", Color3.fromRGB(255, 215, 0))
+local FragBox = InfoBox(PrincipalTab, "💎 Fragmentos", "Carregando...", Color3.fromRGB(100, 200, 255))
 
-local GridLayout = Instance.new("UIGridLayout", StatusGrid)
-GridLayout.CellSize = UDim2.new(0.48, 0, 0, 40)
-GridLayout.CellPadding = UDim2.new(0.04, 0, 0, 8)
+task.spawn(function()
+    while task.wait(5) do
+        pcall(function()
+            local money = LocalPlayer.Data.Beli.Value
+            local frags = LocalPlayer.Data.Fragments.Value
+            
+            MoneyBox.ValueLabel.Text = "$ " .. FormatNumber(money)
+            FragBox.ValueLabel.Text = FormatNumber(frags)
+        end)
+    end
+end)
 
+-- Status de Eventos apenas para Sea 3
 if Sea == 3 then
-    local LeviathanStatus = StatusIndicator(StatusGrid, "🐉 Leviathan", false, false)
-    local MirageStatus = StatusIndicator(StatusGrid, "🏝️ Miragem", false, false)
-    
+    Section(PrincipalTab, "Status de Eventos (SEA 3)")
+
+    local StatusGrid = Instance.new("Frame", PrincipalTab)
+    StatusGrid.Size = UDim2.new(1, 0, 0, 100)
+    StatusGrid.BackgroundTransparency = 1
+
+    local GridLayout = Instance.new("UIGridLayout", StatusGrid)
+    GridLayout.CellSize = UDim2.new(0.48, 0, 0, 45)
+    GridLayout.CellPadding = UDim2.new(0.04, 0, 0, 8)
+
+    local LeviathanStatus = StatusIndicator(StatusGrid, "🐉 Leviathan", false)
+    local MirageStatus = StatusIndicator(StatusGrid, "🏝️ Ilha Miragem", false)
+
     task.spawn(function()
         while task.wait(30) do
             pcall(function()
@@ -1713,273 +1736,303 @@ if Sea == 3 then
             end)
         end
     end)
-elseif Sea == 2 then
-    local KatakuriStatus = StatusIndicator(StatusGrid, "🍩 Katakuri", false, false)
+end
+
+-- Progresso Katakuri apenas para Sea 2
+if Sea == 2 then
+    Section(PrincipalTab, "Progresso Katakuri (SEA 2)")
+    
+    local KatakuriBox = InfoBox(PrincipalTab, "🍩 Katakuri Progress", "Carregando...", Color3.fromRGB(255, 100, 200))
+    
     task.spawn(function()
-        while task.wait(10) do
+        while task.wait(5) do
             pcall(function()
-                KatakuriStatus.Label.Text = "🍩 Katakuri\n" .. GetKatakuriProgress()
+                KatakuriBox.ValueLabel.Text = GetKatakuriProgress()
             end)
         end
     end)
 end
 
 -- =========================
--- ABA SELECIONADAS
--- =========================
-local NoSelectedLabel = Instance.new("TextLabel", SelectedTab)
-NoSelectedLabel.Size = UDim2.new(1, 0, 1, 0)
-NoSelectedLabel.Text = "Nenhuma opção selecionada ainda.\n\nAtive funcionalidades nas outras abas."
-NoSelectedLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-NoSelectedLabel.BackgroundTransparency = 1
-NoSelectedLabel.Font = Enum.Font.Gotham
-NoSelectedLabel.TextSize = 11
-NoSelectedLabel.TextWrapped = true
-
--- =========================
 -- ABA FARM
 -- =========================
-Section(FarmTab, "Configuração")
+Section(FarmTab, "Configuração de Farm")
 
 Dropdown(FarmTab, "Tipo de Arma", {"Nenhum", "Estilo de Luta", "Espada", "Arma", "Fruta"}, function(v)
     _G.Settings.WeaponType = v
-end, "WeaponType")
+end)
 
 Dropdown(FarmTab, "Distância", {"20", "30", "40", "50"}, function(v)
     _G.Settings.FarmDistance = tonumber(v)
-end, "FarmDistance")
+end)
 
 Toggle(FarmTab, "Bring Mobs", function(v)
     _G.Settings.BringMobs = v
-end, "BringMobs")
+end)
 
 Section(FarmTab, "Auto Farm")
 
 Toggle(FarmTab, "Auto Farm Level", function(v)
     if v and _G.Settings.WeaponType == "Nenhum" then
-        Notify("⚠️ SELECIONE UMA ARMA PRIMEIRO!")
+        warn("⚠️ SELECIONE UM TIPO DE ARMA!")
         return
     end
     _G.Settings.AutoFarmLevel = v
-end, "AutoFarmLevel")
+end)
 
 Toggle(FarmTab, "Auto Farm Boss", function(v)
     _G.Settings.AutoFarmBoss = v
-end, "AutoFarmBoss")
+end)
 
+-- Boss Dropdown com atualização dinâmica
 local bossDropdown = Dropdown(FarmTab, "Boss", GetSpawnedBosses(), function(v)
     _G.Settings.SelectedBoss = v
-end, "SelectedBoss")
+end)
 
+-- Atualizar lista de bosses a cada 10 segundos
 task.spawn(function()
     while task.wait(10) do
         pcall(function()
             local spawnedBosses = GetSpawnedBosses()
+            
+            -- Limpar dropdown atual
             for _, child in pairs(bossDropdown.Dropdown:GetChildren()) do
                 if child:IsA("TextButton") then
                     child:Destroy()
                 end
             end
+            
+            -- Recriar opções
             for _, boss in pairs(spawnedBosses) do
                 local OptBtn = Instance.new("TextButton", bossDropdown.Dropdown)
-                OptBtn.Size = UDim2.new(1, 0, 0, 33)
+                OptBtn.Size = UDim2.new(1, 0, 0, 36)
                 OptBtn.Text = boss
                 OptBtn.BackgroundColor3 = Config.Tema.Botao
                 OptBtn.TextColor3 = Config.Tema.Texto
                 OptBtn.Font = Enum.Font.Gotham
-                OptBtn.TextSize = 8
+                OptBtn.TextSize = 9
                 OptBtn.BorderSizePixel = 0
+                
                 OptBtn.MouseButton1Click:Connect(function()
                     bossDropdown.Button.Text = boss
                     bossDropdown.Dropdown.Visible = false
                     _G.Settings.SelectedBoss = boss
-                    SaveConfig()
                 end)
             end
-            bossDropdown.Dropdown.CanvasSize = UDim2.fromOffset(0, #spawnedBosses * 35)
+            
+            bossDropdown.Dropdown.CanvasSize = UDim2.fromOffset(0, #spawnedBosses * 38)
         end)
     end
 end)
 
 Toggle(FarmTab, "Auto Chest", function(v)
     _G.Settings.AutoChest = v
-end, "AutoChest")
+end)
 
 Toggle(FarmTab, "Fast Attack", function(v)
     _G.Settings.FastAttack = v
-end, "FastAttack")
+end)
 
 Toggle(FarmTab, "Auto Haki", function(v)
     _G.Settings.AutoHaki = v
-end, "AutoHaki")
+end)
 
 -- =========================
 -- ABA FRUTAS
 -- =========================
 Toggle(FruitTab, "Girar Frutas", function(v)
     _G.Settings.AutoRandomFruit = v
-end, "AutoRandomFruit")
+end)
 
 Toggle(FruitTab, "Fruit Sniper", function(v)
     _G.Settings.AutoFruitSniper = v
-end, "AutoFruitSniper")
+end)
 
 Toggle(FruitTab, "Auto Guardar", function(v)
     _G.Settings.AutoStoreFruit = v
-end, "AutoStoreFruit")
+end)
 
 Toggle(FruitTab, "Auto Comprar", function(v)
     _G.Settings.AutoBuyFruit = v
-end, "AutoBuyFruit")
+end)
 
 Dropdown(FruitTab, "Fruta", FruitList, function(v)
     _G.Settings.SelectedFruit = v
-end, "SelectedFruit")
+end)
 
 Button(FruitTab, "📊 Loja Normal", function()
     task.spawn(function()
         local remote = GetRemote()
         if not remote then 
-            Notify("❌ Remote não encontrado!")
+            warn("❌ Remote não encontrado!")
             return 
         end
-        print("=== FRUIT SHOP ===")
-            local shopData = remote:InvokeServer("GetFruits")
-            if shopData then
-                local shopText = "🍏 LOJA DE FRUTAS:\n\n"
-                for fruitName, fruitInfo in pairs(shopData) do
-                    shopText = shopText .. string.format("• %s - $%s\n", fruitName, FormatNumber(fruitInfo.Price))
-                end
-                Notify(shopText, 8)
-            else
-                Notify("❌ Erro ao buscar loja!")
-            end
+        
+        print("=== LOJA NORMAL ===")
+        print("Consultando frutas disponíveis...")
+        
+        local success, result = pcall(function()
+            return remote:InvokeServer("GetFruits")
         end)
-    end
+        
+        if success and result then
+            if type(result) == "table" then
+                for _, fruit in pairs(result) do
+                    if type(fruit) == "table" and fruit.Name and fruit.Price then
+                        print(string.format("🍎 %s - 💵 $%s", fruit.Name, FormatNumber(fruit.Price)))
+                    end
+                end
+            else
+                print("⚠️ Formato de resposta inesperado")
+            end
+        else
+            warn("❌ Erro ao consultar loja:", tostring(result))
+        end
+    end)
 end)
 
-Button(FruitTab, "📊 Loja de Fragmentos", function()
+Button(FruitTab, "🌀 Loja Miragem", function()
     task.spawn(function()
         local remote = GetRemote()
         if not remote then 
-            Notify("❌ Remote não encontrado!")
+            warn("❌ Remote não encontrado!")
             return 
         end
-        print("=== FRAGMENT SHOP ===")
-        local shopData = remote:InvokeServer("getInventoryWeapons")
-        if shopData then
-            Notify("📋 Confira o console (F9)", 3)
+        
+        print("=== LOJA MIRAGEM ===")
+        print("Consultando loja miragem...")
+        
+        local success, result = pcall(function()
+            return remote:InvokeServer("GetFruits", true)
+        end)
+        
+        if success then
+            if type(result) == "table" then
+                for _, fruit in pairs(result) do
+                    if type(fruit) == "table" and fruit.Name and fruit.Price then
+                        print(string.format("🌟 %s - 💎 %s fragmentos", fruit.Name, FormatNumber(fruit.Price)))
+                    end
+                end
+            else
+                print("✅ Loja miragem verificada!")
+            end
         else
-            Notify("❌ Erro ao buscar inventário!")
+            warn("❌ Erro ao consultar loja miragem:", tostring(result))
         end
     end)
 end)
 
 -- =========================
--- ABA TELEPORTE
+-- ABA TELEPORT
 -- =========================
-Section(TeleportTab, "Teleporte Rápido")
+Section(TeleportTab, "Mudar de Sea")
 
-for _, island in pairs(CurrentIslands) do
-    Button(TeleportTab, "🗺️ " .. island, function()
-        if IslandPositions[island] then
-            TP(IslandPositions[island])
-            Notify("✈️ Teleportando para " .. island)
-        end
+local SeaFrame = Instance.new("Frame", TeleportTab)
+SeaFrame.Size = UDim2.new(1, 0, 0, 55)
+SeaFrame.BackgroundTransparency = 1
+
+local SeaLayout = Instance.new("UIListLayout", SeaFrame)
+SeaLayout.FillDirection = Enum.FillDirection.Horizontal
+SeaLayout.Padding = UDim.new(0, 5)
+SeaLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+for i = 1, 3 do
+    local SeaBtn = Instance.new("TextButton", SeaFrame)
+    SeaBtn.Size = UDim2.new(0.3, 0, 0, 50)
+    SeaBtn.Text = "SEA " .. i
+    SeaBtn.BackgroundColor3 = Sea == i and Config.Tema.Ativo or Config.Tema.Botao
+    SeaBtn.BackgroundTransparency = 0.3
+    SeaBtn.TextColor3 = Color3.new(1, 1, 1)
+    SeaBtn.Font = Enum.Font.GothamBold
+    SeaBtn.TextSize = 12
+    SeaBtn.BorderSizePixel = 0
+    
+    local SeaBtnCorner = Instance.new("UICorner", SeaBtn)
+    SeaBtnCorner.CornerRadius = UDim.new(0, 8)
+    
+    SeaBtn.MouseButton1Click:Connect(function()
+        TeleportToSea(i)
     end)
 end
 
-Section(TeleportTab, "Trocar de SEA")
+Section(TeleportTab, "Ilhas do " .. (Sea == 1 and "Sea 1" or Sea == 2 and "Sea 2" or "Sea 3"))
 
-Button(TeleportTab, "🌊 SEA 1", function()
-    TeleportToSea(1)
+Dropdown(TeleportTab, "Selecionar Ilha", CurrentIslands, function(v)
+    _G.Settings.SelectedIsland = v
 end)
 
-Button(TeleportTab, "🌊 SEA 2", function()
-    TeleportToSea(2)
-end)
-
-Button(TeleportTab, "🌊 SEA 3", function()
-    TeleportToSea(3)
+Button(TeleportTab, "🚀 Teleportar para Ilha", function()
+    if _G.Settings.SelectedIsland and IslandPositions[_G.Settings.SelectedIsland] then
+        TP(IslandPositions[_G.Settings.SelectedIsland])
+        print("✅ Teleportado para " .. _G.Settings.SelectedIsland)
+    else
+        warn("⚠️ Selecione uma ilha primeiro!")
+    end
 end)
 
 -- =========================
 -- ABA SEA EVENT
 -- =========================
-Toggle(SeaEventTab, "Ativar Sea Event", function(v)
-    _G.Settings.SeaEventActive = v
-end, "SeaEventActive")
+Section(SeaEventTab, "Configurações de Evento")
 
-Dropdown(SeaEventTab, "Barco", {"Nenhum", "PirateBrigade", "PirateSloop", "MarineSloop", "MarineBrigade"}, function(v)
-    _G.Settings.SeaEventBoat = v
-end, "SeaEventBoat")
+Toggle(SeaEventTab, "Auto Katakuri (Sea 2)", function(v)
+    _G.Settings.AutoKatakuri = v
+end)
 
-Dropdown(SeaEventTab, "Profundidade", {"Mar 1", "Mar 2", "Mar 3", "Mar 4", "Mar 5", "Mar 6"}, function(v)
-    _G.Settings.SeaDepth = v
-end, "SeaDepth")
-
-if Sea == 2 then
-    Toggle(SeaEventTab, "Auto Katakuri", function(v)
-        _G.Settings.AutoKatakuri = v
-    end, "AutoKatakuri")
-    
-    Toggle(SeaEventTab, "Auto Factory", function(v)
-        _G.Settings.AutoFactory = v
-    end, "AutoFactory")
-end
+Toggle(SeaEventTab, "Auto Factory (Sea 2)", function(v)
+    _G.Settings.AutoFactory = v
+end)
 
 Toggle(SeaEventTab, "Auto Sea Beast", function(v)
     _G.Settings.AutoSeaBeast = v
-end, "AutoSeaBeast")
+end)
+
+Section(SeaEventTab, "Sistema de Barco")
+
+Dropdown(SeaEventTab, "Barco", {"Nenhum", "PirateBrigade", "PirateGrandBrigade", "MarineBrigade"}, function(v)
+    _G.Settings.SeaEventBoat = v
+end)
+
+Dropdown(SeaEventTab, "Profundidade", {"Mar 1", "Mar 2", "Mar 3", "Mar 4", "Mar 5", "Mar 6"}, function(v)
+    _G.Settings.SeaDepth = v
+end)
+
+Toggle(SeaEventTab, "Ativar Evento Mar", function(v)
+    _G.Settings.SeaEventActive = v
+end)
 
 -- =========================
 -- ABA ESP
 -- =========================
 Toggle(ESPTab, "ESP Frutas", function(v)
     _G.Settings.ESPFruit = v
-end, "ESPFruit")
+end)
 
 Toggle(ESPTab, "ESP Ilhas", function(v)
     _G.Settings.ESPIsland = v
-end, "ESPIsland")
+end)
 
-Toggle(ESPTab, "ESP Jogadores", function(v)
+Toggle(ESPTab, "ESP Players", function(v)
     _G.Settings.ESPPlayer = v
-end, "ESPPlayer")
+end)
 
-Toggle(ESPTab, "ESP Baús", function(v)
+Toggle(ESPTab, "ESP Chest", function(v)
     _G.Settings.ESPChest = v
-end, "ESPChest")
+end)
 
 -- =========================
--- ABA CONFIGURAÇÕES
+-- ABA CONFIG PLAYER
 -- =========================
 Toggle(PlayerTab, "Andar na Água", function(v)
     _G.Settings.WalkOnWater = v
-end, "WalkOnWater")
+end)
 
 Toggle(PlayerTab, "Remover Neblina", function(v)
     _G.Settings.RemoveFog = v
-end, "RemoveFog")
+end)
 
 Toggle(PlayerTab, "Anti AFK", function(v)
     _G.Settings.AntiAFK = v
-end, "AntiAFK")
-
-Button(PlayerTab, "🔄 Resetar Config", function()
-    for k, _ in pairs(_G.Settings) do
-        if type(_G.Settings[k]) == "boolean" then
-            _G.Settings[k] = false
-        elseif type(_G.Settings[k]) == "string" then
-            _G.Settings[k] = "Nenhum"
-        end
-    end
-    SaveConfig()
-    Notify("✅ Configurações resetadas!")
-    task.wait(1)
-    game:GetService("StarterGui"):SetCore("DevConsoleVisible", true)
-    task.wait(0.5)
-    game:GetService("StarterGui"):SetCore("DevConsoleVisible", false)
 end)
 
 -- =========================
@@ -1987,11 +2040,7 @@ end)
 -- =========================
 Toggle(PVPTab, "Auto PVP", function(v)
     _G.Settings.AutoPVP = v
-end, "AutoPVP")
-
-Toggle(PVPTab, "Safe Mode", function(v)
-    _G.Settings.SafeMode = v
-end, "SafeMode")
+end)
 
 local playerList = {}
 for _, player in pairs(Players:GetPlayers()) do
@@ -2002,33 +2051,22 @@ end
 
 Dropdown(PVPTab, "Jogador", playerList, function(v)
     _G.Settings.SelectedPlayer = v
-end, "SelectedPlayer")
+end)
+
+Toggle(PVPTab, "Modo Seguro (30% HP)", function(v)
+    _G.Settings.SafeMode = v
+end)
 
 -- =========================
--- ABA MISSÕES
+-- ANTI AFK
 -- =========================
-Section(MissoesTab, "Em Desenvolvimento")
-
-local DevLabel = Instance.new("TextLabel", MissoesTab)
-DevLabel.Size = UDim2.new(1, 0, 0.3, 0)
-DevLabel.Position = UDim2.new(0, 0, 0.35, 0)
-DevLabel.Text = "⚠️ CONTEÚDO EM BREVE ⚠️\n\nEsta aba ainda está sendo desenvolvida.\nAguarde futuras atualizações!"
-DevLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-DevLabel.BackgroundTransparency = 1
-DevLabel.Font = Enum.Font.GothamBold
-DevLabel.TextSize = 12
-DevLabel.TextWrapped = true
-
--- =========================
--- SISTEMA DE BUSCA
--- =========================
-Search.Changed:Connect(function()
-    local searchText = Search.Text:lower()
-    for tabName, tabData in pairs(Tabs) do
-        if tabName:lower():find(searchText) then
-            tabData.Btn.Visible = true
-        else
-            tabData.Btn.Visible = searchText == ""
+task.spawn(function()
+    while task.wait(60) do
+        if _G.Settings.AntiAFK then
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end)
         end
     end
 end)
@@ -2036,111 +2074,56 @@ end)
 -- =========================
 -- CONTROLES DO HUB
 -- =========================
-local function OpenHub()
-    Main.Visible = true
-    Bubble.Visible = false
-    Config.Aberto = true
-    Config.Minimizado = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 600)})
-    NoSelectedLabel.Visible = next(SelectedOptions) == nil
-end
-
-local function CloseHub()
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
-    task.wait(0.3)
-    Main.Visible = false
-    Bubble.Visible = true
-    Config.Aberto = false
-end
-
-local function MinimizeHub()
-    Config.Minimizado = true
-    Tween(Main, 0.3, {Size = UDim2.new(0, 500, 0, 50)})
-    Body.Visible = false
-    MinBtn.Visible = false
-    MaxBtn.Visible = true
-end
-
-local function MaximizeHub()
-    Config.Minimizado = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 600)})
-    task.wait(0.3)
-    Body.Visible = true
-    MinBtn.Visible = true
-    MaxBtn.Visible = false
-end
-
-Bubble.MouseButton1Click:Connect(OpenHub)
-CloseBtn.MouseButton1Click:Connect(CloseHub)
-MinBtn.MouseButton1Click:Connect(MinimizeHub)
-MaxBtn.MouseButton1Click:Connect(MaximizeHub)
-
--- =========================
--- ATUALIZAR LISTA DE SELECIONADOS
--- =========================
-task.spawn(function()
-    while task.wait(0.5) do
-        NoSelectedLabel.Visible = next(SelectedOptions) == nil
+Bubble.MouseButton1Click:Connect(function()
+    Config.Aberto = not Config.Aberto
+    
+    if Config.Aberto then
+        Main.Visible = true
+        Tween(Main, 0.3, {Size = UDim2.fromOffset(IsMobile() and 380 or 500, IsMobile() and 520 or 600)})
+    else
+        Tween(Main, 0.3, {Size = UDim2.fromScale(0, 0)})
+        task.wait(0.3)
+        Main.Visible = false
     end
 end)
 
+CloseBtn.MouseButton1Click:Connect(function()
+    Config.Aberto = false
+    Tween(Main, 0.3, {Size = UDim2.fromScale(0, 0)})
+    task.wait(0.3)
+    Main.Visible = false
+end)
+
 -- =========================
--- MOSTRAR OPÇÕES SELECIONADAS NA INICIALIZAÇÃO
+-- SISTEMA DE BUSCA
 -- =========================
-task.spawn(function()
-    task.wait(1)
+Search:GetPropertyChangedSignal("Text"):Connect(function()
+    local searchText = Search.Text:lower()
     
-    if configLoaded then
-        local selectedList = {}
-        for k, v in pairs(_G.Settings) do
-            if type(v) == "boolean" and v == true then
-                local displayNames = {
-                    AutoFarmLevel = "Auto Farm Level",
-                    AutoFarmBoss = "Auto Farm Boss",
-                    AutoChest = "Auto Chest",
-                    FastAttack = "Fast Attack",
-                    AutoHaki = "Auto Haki",
-                    BringMobs = "Bring Mobs",
-                    WalkOnWater = "Andar na Água",
-                    RemoveFog = "Remover Neblina",
-                    AntiAFK = "Anti AFK",
-                    ESPFruit = "ESP Frutas",
-                    ESPIsland = "ESP Ilhas",
-                    ESPPlayer = "ESP Jogadores",
-                    ESPChest = "ESP Baús",
-                    AutoFruitSniper = "Fruit Sniper",
-                    AutoStoreFruit = "Auto Guardar",
-                    AutoBuyFruit = "Auto Comprar",
-                    AutoRandomFruit = "Girar Frutas",
-                    SeaEventActive = "Ativar Sea Event",
-                    AutoKatakuri = "Auto Katakuri",
-                    AutoFactory = "Auto Factory",
-                    AutoSeaBeast = "Auto Sea Beast",
-                    AutoPVP = "Auto PVP",
-                    SafeMode = "Safe Mode"
-                }
-                if displayNames[k] then
-                    table.insert(selectedList, displayNames[k])
+    for _, tab in pairs(Tabs) do
+        for _, item in pairs(tab.Frame:GetChildren()) do
+            if item:IsA("Frame") or item:IsA("TextButton") then
+                local textLabel = item:FindFirstChildWhichIsA("TextLabel", true)
+                if textLabel then
+                    local itemText = textLabel.Text:lower()
+                    item.Visible = searchText == "" or itemText:find(searchText) ~= nil
                 end
             end
         end
-        
-        if #selectedList > 0 then
-            local message = "Opções selecionadas:\n\n"
-            for _, option in pairs(selectedList) do
-                message = message .. "• " .. option .. "\n"
-            end
-            Notify(message, 5)
-        end
     end
 end)
 
 -- =========================
--- AUTO-OPEN NO PRIMEIRO USO
+-- NOTIFICAÇÃO INICIAL
 -- =========================
-task.wait(0.5)
-OpenHub()
+print("=================================")
+print("   LAG TECK HUB v2.0 CARREGADO")
+print("=================================")
+print("✅ SEA: " .. Sea)
+print("✅ Level: " .. LocalPlayer.Data.Level.Value)
+print("✅ Discord: discord.gg/RnZ6XHHFj7")
+print("=================================")
 
-Notify("✅ LagTeck Hub v2.0 carregado!\nSEA " .. Sea, 4)
-
+-- =========================
 -- FIM DO SCRIPT
+-- =========================
