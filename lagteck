@@ -2398,7 +2398,8 @@ Body.Position = UDim2.fromOffset(0, 55)
 Body.Size = UDim2.new(1, 0, 1, -55)
 Body.BackgroundTransparency = 1
 Body.Visible = true
-Body.ZIndex = 1001
+Body.ZIndex = 1
+Body.ClipsDescendants = false
 
 -- =========================
 -- SEARCH BAR
@@ -2427,6 +2428,8 @@ TabBar.BackgroundTransparency = 1
 TabBar.BorderSizePixel = 0
 TabBar.ScrollBarThickness = 3
 TabBar.CanvasSize = UDim2.fromOffset(0, 0)
+TabBar.ZIndex = 2
+TabBar.Visible = true
 
 local TabLayout = Instance.new("UIListLayout", TabBar)
 TabLayout.Padding = UDim.new(0, 4)
@@ -2442,6 +2445,8 @@ local Content = Instance.new("Frame", Body)
 Content.Position = UDim2.fromOffset(110, 45)
 Content.Size = UDim2.new(1, -120, 1, -55)
 Content.BackgroundTransparency = 1
+Content.ZIndex = 2
+Content.Visible = true
 
 local Tabs = {}
 local SelectedOptions = {}
@@ -2460,6 +2465,8 @@ local function CriarAba(nome)
     Btn.Font = Enum.Font.Gotham
     Btn.TextSize = 9
     Btn.AutoButtonColor = false
+    Btn.ZIndex = 3
+    Btn.Visible = true
 
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
@@ -2471,6 +2478,7 @@ local function CriarAba(nome)
     Frame.Visible = false
     Frame.BackgroundTransparency = 1
     Frame.BorderSizePixel = 0
+    Frame.ZIndex = 3
 
     local Layout = Instance.new("UIListLayout", Frame)
     Layout.Padding = UDim.new(0, 5)
