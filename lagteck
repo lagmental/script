@@ -2297,7 +2297,7 @@ local Main = Instance.new("Frame", Gui)
 Main.Size = UDim2.fromOffset(0, 0)
 Main.Position = UDim2.new(0.5, -250, 0.5, -275)
 Main.BackgroundColor3 = Config.Tema.Fundo
-Main.BackgroundTransparency = 0.1
+Main.BackgroundTransparency = 0
 Main.BorderSizePixel = 0
 Main.Visible = false
 Main.ZIndex = 1000
@@ -2305,42 +2305,12 @@ Main.Active = true
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
--- Fazer painel arrastável
-local dragging
+-- Arrastar desativado aqui (só pela borda branca no final do script)
+Main.Active = false
+local dragging = false
 local dragInput
 local dragStart
 local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-Main.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
 
 -- =========================
 -- TOP BAR
@@ -2348,7 +2318,7 @@ end)
 local Top = Instance.new("Frame", Main)
 Top.Size = UDim2.new(1, 0, 0, 50)
 Top.BackgroundColor3 = Config.Tema.Secundario
-Top.BackgroundTransparency = 0.1
+Top.BackgroundTransparency = 0
 Top.BorderSizePixel = 0
 
 Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 12)
@@ -2486,7 +2456,7 @@ local function CriarAba(nome)
     Btn.Size = UDim2.new(1, 0, 0, 35)
     Btn.Text = nome
     Btn.BackgroundColor3 = Config.Tema.Botao
-    Btn.BackgroundTransparency = 0.3
+    Btn.BackgroundTransparency = 0
     Btn.TextColor3 = Config.Tema.Texto
     Btn.BorderSizePixel = 0
     Btn.Font = Enum.Font.Gotham
