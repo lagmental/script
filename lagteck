@@ -2294,7 +2294,7 @@ Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1, 0)
 -- PAINEL PRINCIPAL
 -- =========================
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromOffset(0, 0)
+Main.Size = UDim2.fromOffset(500, 550) 
 Main.Position = UDim2.new(0.5, -250, 0.5, -275)
 Main.BackgroundColor3 = Config.Tema.Fundo
 Main.BackgroundTransparency = 0
@@ -2302,15 +2302,9 @@ Main.BorderSizePixel = 0
 Main.Visible = false
 Main.ZIndex = 1000
 Main.Active = true
+Main.ClipsDescendants = false
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
-
--- Arrastar desativado aqui (só pela borda branca no final do script)
-Main.Active = false
-local dragging = false
-local dragInput
-local dragStart
-local startPos
 
 -- =========================
 -- TOP BAR
@@ -2320,6 +2314,8 @@ Top.Size = UDim2.new(1, 0, 0, 50)
 Top.BackgroundColor3 = Config.Tema.Secundario
 Top.BackgroundTransparency = 0
 Top.BorderSizePixel = 0
+Top.ZIndex = 1001
+Top.Visible = true
 
 Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 12)
 
@@ -2401,6 +2397,9 @@ local Body = Instance.new("Frame", Main)
 Body.Position = UDim2.fromOffset(0, 55)
 Body.Size = UDim2.new(1, 0, 1, -55)
 Body.BackgroundTransparency = 1
+Body.Visible = true
+Body.ZIndex = 1
+Body.ClipsDescendants = false
 
 -- =========================
 -- SEARCH BAR
@@ -2429,6 +2428,8 @@ TabBar.BackgroundTransparency = 1
 TabBar.BorderSizePixel = 0
 TabBar.ScrollBarThickness = 3
 TabBar.CanvasSize = UDim2.fromOffset(0, 0)
+TabBar.ZIndex = 2
+TabBar.Visible = true
 
 local TabLayout = Instance.new("UIListLayout", TabBar)
 TabLayout.Padding = UDim.new(0, 4)
@@ -2444,6 +2445,8 @@ local Content = Instance.new("Frame", Body)
 Content.Position = UDim2.fromOffset(110, 45)
 Content.Size = UDim2.new(1, -120, 1, -55)
 Content.BackgroundTransparency = 1
+Content.ZIndex = 2
+Content.Visible = true
 
 local Tabs = {}
 local SelectedOptions = {}
@@ -2462,6 +2465,8 @@ local function CriarAba(nome)
     Btn.Font = Enum.Font.Gotham
     Btn.TextSize = 9
     Btn.AutoButtonColor = false
+    Btn.ZIndex = 3
+    Btn.Visible = true
 
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
@@ -2473,6 +2478,7 @@ local function CriarAba(nome)
     Frame.Visible = false
     Frame.BackgroundTransparency = 1
     Frame.BorderSizePixel = 0
+    Frame.ZIndex = 3
 
     local Layout = Instance.new("UIListLayout", Frame)
     Layout.Padding = UDim.new(0, 5)
@@ -2820,13 +2826,26 @@ local MiscTab = CriarAba("📦 Misc")
 
 SelectedFrame = SelectedTab
 
--- Ativar primeira aba
+-- Ativar primeira aba e garantir visibilidade
 for _, v in pairs(Tabs) do
     v.Frame.Visible = false
+    v.Btn.Visible = true
+    v.Btn.ZIndex = 1002
     Tween(v.Btn, 0.2, {BackgroundColor3 = Config.Tema.Botao})
 end
+
 Tabs["🏠 Home"].Frame.Visible = true
 Tween(Tabs["🏠 Home"].Btn, 0.2, {BackgroundColor3 = Config.Tema.Ativo})
+
+-- Forçar visibilidade de todos os elementos
+Search.Visible = true
+Search.ZIndex = 1002
+TabBar.Visible = true
+TabBar.ZIndex = 1002
+Content.Visible = true
+Content.ZIndex = 1002
+
+print("✅ Elementos da GUI configurados!")
 
 -- =========================
 -- ABA HOME
@@ -3760,60 +3779,6 @@ Button(MiscTab, "📋 Copy Discord Link", function()
 end)
 
 -- =========================
--- CONTROLES DA GUI
--- =========================
-Bubble.MouseButton1Click:Connect(function()
-    Config.Aberto = not Config.Aberto
-    if Config.Aberto then
-        Main.Visible = true
-        Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
-    else
-        Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
-        task.wait(0.3)
-        Main.Visible = false
-    end
-end)
-
-MinBtn.MouseButton1Click:Connect(function()
-    Config.Minimizado = true
-    Body.Visible = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 50)})
-    MinBtn.Visible = false
-    MaxBtn.Visible = true
-end)
-
-MaxBtn.MouseButton1Click:Connect(function()
-    Config.Minimizado = false
-    Body.Visible = true
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
-    MaxBtn.Visible = false
-    MinBtn.Visible = true
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    Config.Aberto = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
-    task.wait(0.3)
-    Main.Visible = false
-end)
-
--- Busca nas abas
-Search:GetPropertyChangedSignal("Text"):Connect(function()
-    local searchText = Search.Text:lower()
-    for _, tab in pairs(Tabs) do
-        for _, item in pairs(tab.Frame:GetChildren()) do
-            if item:IsA("Frame") or item:IsA("TextButton") then
-                local textLabel = item:FindFirstChildWhichIsA("TextLabel", true)
-                if textLabel then
-                    local itemText = textLabel.Text:lower()
-                    item.Visible = searchText == "" or itemText:find(searchText) ~= nil
-                end
-            end
-        end
-    end
-end)
-
--- =========================
 -- AUTO REJOIN ON KICK
 -- =========================
 task.spawn(function()
@@ -3953,46 +3918,62 @@ end)
 print("🎉 LAG TECK HUB v2.0 - TODAS AS 8 PARTES CARREGADAS COM SUCESSO!")
 
 -- =========================
--- CORREÇÕES DE GUI - PARTE 9
+-- CONTROLES DA GUI (CORRIGIDO)
 -- =========================
 
--- REDIMENSIONAR PAINEL (MENOR)
-Main.Size = UDim2.fromOffset(450, 500) -- Reduzido de 500x550 para 450x500
-Main.Position = UDim2.new(0.5, -225, 0.5, -250)
+-- Configurar Main antes dos botões
+Main.Active = true
+Main.Visible = false
 
--- AJUSTAR BODY
-Body.Position = UDim2.fromOffset(0, 60) -- Aumentado de 55 para 60
-Body.Size = UDim2.new(1, 0, 1, -60)
+-- Botão da Bolinha (Abrir/Fechar)
+Bubble.MouseButton1Click:Connect(function()
+    Config.Aberto = not Config.Aberto
+    print("🔵 Clicou na bolinha! Aberto:", Config.Aberto)
+    
+    if Config.Aberto then
+        Main.Visible = true
+        Main.Size = UDim2.fromOffset(0, 0)
+        Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
+        Body.Visible = true
+    else
+        Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
+        task.wait(0.35)
+        Main.Visible = false
+    end
+end)
 
--- =========================
--- CRIAR BORDA BRANCA ARRASTÁVEL
--- =========================
+-- Botão Minimizar
+MinBtn.MouseButton1Click:Connect(function()
+    Config.Minimizado = true
+    Body.Visible = false
+    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 50)})
+    MinBtn.Visible = false
+    MaxBtn.Visible = true
+end)
 
--- Remover arrastar do Main inteiro
-Main.Active = false
+-- Botão Maximizar
+MaxBtn.MouseButton1Click:Connect(function()
+    Config.Minimizado = false
+    Body.Visible = true
+    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
+    MaxBtn.Visible = false
+    MinBtn.Visible = true
+end)
 
--- Criar borda superior (DRAG AREA)
-local DragBorder = Instance.new("Frame", Main)
-DragBorder.Size = UDim2.new(1, 0, 0, 60) -- Toda a top bar
-DragBorder.Position = UDim2.fromOffset(0, 0)
-DragBorder.BackgroundTransparency = 1
-DragBorder.BorderSizePixel = 0
-DragBorder.ZIndex = 10001
-DragBorder.Active = true
+-- Botão Fechar
+CloseBtn.MouseButton1Click:Connect(function()
+    Config.Aberto = false
+    Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
+    task.wait(0.35)
+    Main.Visible = false
+end)
 
--- Sistema de arrastar melhorado (APENAS PELA BORDA)
+-- Arrastar pela barra superior
 local dragging = false
-local dragInput
-local dragStart
-local startPos
+local dragInput, dragStart, startPos
 
-local function updateDrag(input)
-    local delta = input.Position - dragStart
-    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-DragBorder.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+Top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
@@ -4005,182 +3986,34 @@ DragBorder.InputBegan:Connect(function(input)
     end
 end)
 
-DragBorder.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+Top.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        updateDrag(input)
+-- Busca
+Search:GetPropertyChangedSignal("Text"):Connect(function()
+    local searchText = Search.Text:lower()
+    for _, tab in pairs(Tabs) do
+        for _, item in pairs(tab.Frame:GetChildren()) do
+            if item:IsA("Frame") or item:IsA("TextButton") then
+                local textLabel = item:FindFirstChildWhichIsA("TextLabel", true)
+                if textLabel then
+                    item.Visible = searchText == "" or textLabel.Text:lower():find(searchText)
+                end
+            end
+        end
     end
 end)
 
--- Remover os event handlers antigos do Main
-Main.InputBegan:Disconnect()
-Main.InputChanged:Disconnect()
-
--- =========================
--- CRIAR BORDA VISUAL BRANCA
--- =========================
-
--- Borda superior
-local TopBorder = Instance.new("Frame", Main)
-TopBorder.Size = UDim2.new(1, 0, 0, 3)
-TopBorder.Position = UDim2.fromOffset(0, 0)
-TopBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TopBorder.BorderSizePixel = 0
-TopBorder.ZIndex = 10002
-
--- Borda inferior
-local BottomBorder = Instance.new("Frame", Main)
-BottomBorder.Size = UDim2.new(1, 0, 0, 3)
-BottomBorder.Position = UDim2.new(0, 0, 1, -3)
-BottomBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-BottomBorder.BorderSizePixel = 0
-BottomBorder.ZIndex = 10002
-
--- Borda esquerda
-local LeftBorder = Instance.new("Frame", Main)
-LeftBorder.Size = UDim2.new(0, 3, 1, 0)
-LeftBorder.Position = UDim2.fromOffset(0, 0)
-LeftBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-LeftBorder.BorderSizePixel = 0
-LeftBorder.ZIndex = 10002
-
--- Borda direita
-local RightBorder = Instance.new("Frame", Main)
-RightBorder.Size = UDim2.new(0, 3, 1, 0)
-RightBorder.Position = UDim2.new(1, -3, 0, 0)
-RightBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-RightBorder.BorderSizePixel = 0
-RightBorder.ZIndex = 10002
-
--- =========================
--- MELHORAR VISIBILIDADE DOS BOTÕES DA TOP BAR
--- =========================
-
--- Reposicionar e melhorar visibilidade dos botões
-MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-MinBtn.BackgroundTransparency = 0
-MinBtn.BorderSizePixel = 2
-MinBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.ZIndex = 10001
-
-MaxBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
-MaxBtn.BackgroundTransparency = 0
-MaxBtn.BorderSizePixel = 2
-MaxBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
-MaxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MaxBtn.ZIndex = 10001
-
-CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
-CloseBtn.BackgroundTransparency = 0
-CloseBtn.BorderSizePixel = 2
-CloseBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.ZIndex = 10001
-
--- Melhorar SEA Label
-SeaLabel.BackgroundTransparency = 0
-SeaLabel.BorderSizePixel = 2
-SeaLabel.BorderColor3 = Color3.fromRGB(255, 255, 255)
-SeaLabel.ZIndex = 10001
-
--- =========================
--- MELHORAR VISIBILIDADE DAS ABAS
--- =========================
-
--- Ajustar tamanho das abas
-TabBar.Size = UDim2.new(0, 85, 1, -55) -- Reduzido de 90 para 85
-
--- Ajustar content
-Content.Position = UDim2.fromOffset(95, 45) -- Ajustado de 110 para 95
-Content.Size = UDim2.new(1, -105, 1, -55) -- Ajustado
-
--- Melhorar cada aba
-for nome, tab in pairs(Tabs) do
-    -- Botão da aba
-    tab.Btn.BackgroundTransparency = 0.1 -- Menos transparente
-    tab.Btn.BorderSizePixel = 1
-    tab.Btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    tab.Btn.TextSize = 8 -- Texto menor
-    tab.Btn.TextWrapped = true
-    
-    -- Frame da aba
-    tab.Frame.BackgroundTransparency = 1
-end
-
--- =========================
--- MELHORAR SEARCH BAR
--- =========================
-Search.BackgroundTransparency = 0
-Search.BorderSizePixel = 1
-Search.BorderColor3 = Color3.fromRGB(100, 100, 100)
-
--- =========================
--- ADICIONAR INDICADOR VISUAL DE ARRASTO
--- =========================
-local DragIndicator = Instance.new("TextLabel", DragBorder)
-DragIndicator.Size = UDim2.new(1, 0, 1, 0)
-DragIndicator.Position = UDim2.fromOffset(0, 0)
-DragIndicator.Text = "═══ ARRASTE AQUI ═══"
-DragIndicator.TextColor3 = Color3.fromRGB(255, 255, 255)
-DragIndicator.BackgroundTransparency = 1
-DragIndicator.Font = Enum.Font.GothamBold
-DragIndicator.TextSize = 10
-DragIndicator.TextTransparency = 0.7
-DragIndicator.ZIndex = 10001
-
--- Fazer o indicador aparecer/desaparecer
-DragBorder.MouseEnter:Connect(function()
-    TweenService:Create(DragIndicator, TweenInfo.new(0.2), {TextTransparency = 0.3}):Play()
-end)
-
-DragBorder.MouseLeave:Connect(function()
-    TweenService:Create(DragIndicator, TweenInfo.new(0.2), {TextTransparency = 0.9}):Play()
-end)
-
--- =========================
--- AJUSTAR TAMANHO AO ABRIR/FECHAR
--- =========================
-
--- Atualizar função de abrir
-Bubble.MouseButton1Click:Connect(function()
-    Config.Aberto = not Config.Aberto
-    if Config.Aberto then
-        Main.Visible = true
-        Tween(Main, 0.3, {Size = UDim2.fromOffset(450, 500)}) -- Tamanho correto
-    else
-        Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
-        task.wait(0.3)
-        Main.Visible = false
-    end
-end)
-
--- Atualizar função de minimizar
-MinBtn.MouseButton1Click:Connect(function()
-    Config.Minimizado = true
-    Body.Visible = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(450, 60)}) -- Tamanho correto
-    MinBtn.Visible = false
-    MaxBtn.Visible = true
-end)
-
--- Atualizar função de expandir
-MaxBtn.MouseButton1Click:Connect(function()
-    Config.Minimizado = false
-    Body.Visible = true
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(450, 500)}) -- Tamanho correto
-    MaxBtn.Visible = false
-    MinBtn.Visible = true
-end)
-
--- =========================
--- MELHORAR HOVER DOS BOTÕES DE ABA
--- =========================
+-- Hover nas abas
 for nome, tab in pairs(Tabs) do
     tab.Btn.MouseEnter:Connect(function()
         if not tab.Frame.Visible then
@@ -4195,27 +4028,5 @@ for nome, tab in pairs(Tabs) do
     end)
 end
 
--- =========================
--- ADICIONAR GLOW NA BORDA
--- =========================
-local GlowEffect = Instance.new("ImageLabel", Main)
-GlowEffect.Size = UDim2.new(1, 40, 1, 40)
-GlowEffect.Position = UDim2.fromOffset(-20, -20)
-GlowEffect.BackgroundTransparency = 1
-GlowEffect.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-GlowEffect.ImageColor3 = Color3.fromRGB(0, 120, 255)
-GlowEffect.ImageTransparency = 0.8
-GlowEffect.ZIndex = 999
-
--- =========================
--- MENSAGEM FINAL DE CORREÇÃO
--- =========================
-task.wait(1)
-print("✅ CORREÇÕES DE GUI APLICADAS!")
-print("📌 Painel menor: 450x500")
-print("📌 Borda branca adicionada")
-print("📌 Arrastar APENAS pela borda superior")
-print("📌 Botões mais visíveis")
-print("📌 Abas clicáveis corrigidas")
-
-Notify("✅ GUI Otimizada!\n\n🖱️ Arraste pela borda superior\n👆 Clique nas abas para navegar", 4)
+print("✅ GUI PRONTA!")
+Notify("✅ Hub Carregado!", 3)
