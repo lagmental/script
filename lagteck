@@ -168,13 +168,21 @@ local Config = {
     Minimizado = false,
     Tema = {
         Fundo = Color3.fromRGB(15,25,50),
-Secundario = Color3.fromRGB(25,40,70),
-Botao = Color3.fromRGB(35,55,90),
+        Secundario = Color3.fromRGB(25,40,70),
+        Botao = Color3.fromRGB(35,55,90),
         Ativo = Color3.fromRGB(0,120,255),
         Texto = Color3.fromRGB(255,255,255),
         AzulClaro = Color3.fromRGB(50,150,255)
     }
 }
+
+-- Variáveis de tamanho do painel
+local PanelWidth = 420
+local PanelHeight = 480
+local MinWidth = 350
+local MinHeight = 400
+local MaxWidth = 650
+local MaxHeight = 600
 
 -- =========================
 -- NOTIFICAÇÕES
@@ -2294,10 +2302,10 @@ Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1, 0)
 -- PAINEL PRINCIPAL
 -- =========================
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.fromOffset(500, 550) 
-Main.Position = UDim2.new(0.5, -250, 0.5, -275)
+Main.Size = UDim2.fromOffset(PanelWidth, PanelHeight) 
+Main.Position = UDim2.new(0.5, -PanelWidth/2, 0.5, -PanelHeight/2)
 Main.BackgroundColor3 = Config.Tema.Fundo
-Main.BackgroundTransparency = 0
+Main.BackgroundTransparency = 0.15  -- TRANSPARÊNCIA LEVE
 Main.BorderSizePixel = 0
 Main.Visible = false
 Main.ZIndex = 1000
@@ -2305,6 +2313,55 @@ Main.Active = true
 Main.ClipsDescendants = false
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- BORDA BRANCA SUTIL
+local Border = Instance.new("UIStroke", Main)
+Border.Color = Color3.fromRGB(255, 255, 255)
+Border.Thickness = 2
+Border.Transparency = 0.7
+Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- =========================
+-- HANDLE DE REDIMENSIONAR
+-- =========================
+local ResizeHandle = Instance.new("Frame", Main)
+ResizeHandle.Size = UDim2.fromOffset(15, 15)
+ResizeHandle.Position = UDim2.new(1, -15, 1, -15)
+ResizeHandle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ResizeHandle.BackgroundTransparency = 0.5
+ResizeHandle.BorderSizePixel = 0
+ResizeHandle.ZIndex = 2000
+
+Instance.new("UICorner", ResizeHandle).CornerRadius = UDim.new(0, 4)
+
+local resizing = false
+local resizeStart, startSize
+
+ResizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        resizing = true
+        resizeStart = input.Position
+        startSize = Main.AbsoluteSize
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                resizing = false
+            end
+        end)
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - resizeStart
+        local newW = math.clamp(startSize.X + delta.X, MinWidth, MaxWidth)
+        local newH = math.clamp(startSize.Y + delta.Y, MinHeight, MaxHeight)
+        
+        Main.Size = UDim2.fromOffset(newW, newH)
+        PanelWidth = newW
+        PanelHeight = newH
+    end
+end)
 
 -- =========================
 -- TOP BAR
@@ -2320,25 +2377,40 @@ Top.Visible = true
 Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", Top)
-Title.Size = UDim2.new(1, -150, 1, -15)
-Title.Position = UDim2.fromOffset(10, 0)
-Title.Text = "Lag Teck Hub v2.0"
+Title.Size = UDim2.new(1, -150, 0, 20)
+Title.Position = UDim2.fromOffset(10, 5)
+Title.Text = "Script Lag Teck"
 Title.TextColor3 = Config.Tema.Texto
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 15
+Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.TextYAlignment = Enum.TextYAlignment.Top
 
-local DiscordLink = Instance.new("TextLabel", Top)
-DiscordLink.Size = UDim2.new(0, 150, 0, 12)
-DiscordLink.Position = UDim2.new(0, 10, 1, -15)
+-- DISCORD CLICÁVEL
+local DiscordLink = Instance.new("TextButton", Top)
+DiscordLink.Size = UDim2.new(0, 180, 0, 18)
+DiscordLink.Position = UDim2.new(0, 10, 0, 27)
 DiscordLink.Text = "discord.gg/RnZ6XHHFj7"
-DiscordLink.TextColor3 = Color3.fromRGB(120, 120, 120)
+DiscordLink.TextColor3 = Color3.fromRGB(100, 180, 255)
 DiscordLink.BackgroundTransparency = 1
-DiscordLink.Font = Enum.Font.Gotham
-DiscordLink.TextSize = 8
+DiscordLink.Font = Enum.Font.GothamBold
+DiscordLink.TextSize = 9
 DiscordLink.TextXAlignment = Enum.TextXAlignment.Left
+DiscordLink.AutoButtonColor = false
+
+DiscordLink.MouseButton1Click:Connect(function()
+    pcall(function() setclipboard("https://discord.gg/RnZ6XHHFj7") end)
+    Notify("✅ Discord copiado!")
+end)
+
+DiscordLink.MouseEnter:Connect(function()
+    DiscordLink.TextColor3 = Color3.fromRGB(150, 220, 255)
+end)
+
+DiscordLink.MouseLeave:Connect(function()
+    DiscordLink.TextColor3 = Color3.fromRGB(100, 180, 255)
+end)
 
 local SeaLabel = Instance.new("TextLabel", Top)
 SeaLabel.Size = UDim2.fromOffset(65, 28)
@@ -2465,7 +2537,7 @@ local function CriarAba(nome)
     Btn.Font = Enum.Font.Gotham
     Btn.TextSize = 9
     Btn.AutoButtonColor = false
-    Btn.ZIndex = 3
+    Btn.ZIndex = 1003  -- AUMENTADO
     Btn.Visible = true
 
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
@@ -2478,10 +2550,11 @@ local function CriarAba(nome)
     Frame.Visible = false
     Frame.BackgroundTransparency = 1
     Frame.BorderSizePixel = 0
-    Frame.ZIndex = 3
+    Frame.ZIndex = 1003  -- AUMENTADO
 
     local Layout = Instance.new("UIListLayout", Frame)
     Layout.Padding = UDim.new(0, 5)
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder  -- ADICIONADO
     
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Frame.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
@@ -2808,21 +2881,20 @@ end
 -- =========================
 -- CRIANDO TODAS AS ABAS
 -- =========================
+-- ABAS REORGANIZADAS
 local HomeTab = CriarAba("🏠 Home")
 local SelectedTab = CriarAba("✓ Ativos")
-local FarmTab = CriarAba("🌾 Farm")
-local BossTab = CriarAba("👹 Boss")
+local FarmTab = CriarAba("🌾 Farm")  -- Farm + Boss juntos
 local FruitTab = CriarAba("🍎 Frutas")
-local CDKTab = CriarAba("⚔️ CDK/TTK")
-local FightingTab = CriarAba("🥋 Estilos")
+local MissionTab = CriarAba("⚔️ Missões")  -- CDK + Estilos juntos
 local RaceTab = CriarAba("🧬 Raças")
 local RaidTab = CriarAba("🏆 Raids")
 local TeleportTab = CriarAba("🗺️ TP")
 local SeaEventTab = CriarAba("🌊 Eventos")
 local ESPTab = CriarAba("👁️ ESP")
-local ConfigTab = CriarAba("⚙️ Config")
 local PVPTab = CriarAba("⚔️ PVP")
 local MiscTab = CriarAba("📦 Misc")
+local ConfigTab = CriarAba("⚙️ Config")  -- Config por último
 
 SelectedFrame = SelectedTab
 
@@ -2844,6 +2916,21 @@ TabBar.Visible = true
 TabBar.ZIndex = 1002
 Content.Visible = true
 Content.ZIndex = 1002
+
+-- Hover nas abas
+for nome, tab in pairs(Tabs) do
+    tab.Btn.MouseEnter:Connect(function()
+        if not tab.Frame.Visible then
+            Tween(tab.Btn, 0.15, {BackgroundColor3 = Color3.fromRGB(50, 75, 120)})
+        end
+    end)
+    
+    tab.Btn.MouseLeave:Connect(function()
+        if not tab.Frame.Visible then
+            Tween(tab.Btn, 0.15, {BackgroundColor3 = Config.Tema.Botao})
+        end
+    end)
+end
 
 print("✅ Elementos da GUI configurados!")
 
@@ -2990,11 +3077,11 @@ Toggle(FarmTab, "Farm Mastery Arma", function(v)
 end, "FarmWeaponMastery")
 
 -- =========================
--- ABA BOSS
+-- ABA FARM (CONTINUAÇÃO - BOSS)
 -- =========================
-Section(BossTab, "Auto Farm Boss")
+Section(FarmTab, "Auto Farm Boss")
 
-Toggle(BossTab, "Auto Farm Boss", function(v)
+Toggle(FarmTab, "Auto Farm Boss", function(v)
     _G.Settings.AutoFarmBoss = v
 end, "AutoFarmBoss")
 
@@ -3015,51 +3102,20 @@ local function GetSpawnedBosses()
     return spawned
 end
 
-local bossDropdown = Dropdown(BossTab, "Boss Selecionado", GetSpawnedBosses(), function(v)
+local bossDropdown = Dropdown(FarmTab, "Boss Selecionado", GetSpawnedBosses(), function(v)
     _G.Settings.SelectedBoss = v
 end, "SelectedBoss")
 
--- Atualizar lista de bosses spawnados
-task.spawn(function()
-    while task.wait(10) do
-        pcall(function()
-            local spawnedBosses = GetSpawnedBosses()
-            for _, child in pairs(bossDropdown.Dropdown:GetChildren()) do
-                if child:IsA("TextButton") then
-                    child:Destroy()
-                end
-            end
-            for _, boss in pairs(spawnedBosses) do
-                local OptBtn = Instance.new("TextButton", bossDropdown.Dropdown)
-                OptBtn.Size = UDim2.new(1, 0, 0, 33)
-                OptBtn.Text = boss
-                OptBtn.BackgroundColor3 = Config.Tema.Botao
-                OptBtn.TextColor3 = Config.Tema.Texto
-                OptBtn.Font = Enum.Font.Gotham
-                OptBtn.TextSize = 8
-                OptBtn.BorderSizePixel = 0
-                OptBtn.MouseButton1Click:Connect(function()
-                    bossDropdown.Button.Text = boss
-                    bossDropdown.Dropdown.Visible = false
-                    _G.Settings.SelectedBoss = boss
-                    SaveConfig()
-                end)
-            end
-            bossDropdown.Dropdown.CanvasSize = UDim2.fromOffset(0, #spawnedBosses * 35)
-        end)
-    end
-end)
-
-Section(BossTab, "Bosses Específicos")
+Section(FarmTab, "Bosses Específicos")
 
 if Sea == 2 then
-    Toggle(BossTab, "Auto Katakuri (500 Donuts)", function(v)
+    Toggle(FarmTab, "Auto Katakuri (500 Donuts)", function(v)
         _G.Settings.AutoKatakuri = v
     end, "AutoKatakuri")
 end
 
 if Sea == 3 then
-    Toggle(BossTab, "Auto Dough King", function(v)
+    Toggle(FarmTab, "Auto Dough King", function(v)
         _G.Settings.AutoDoughKing = v
     end, "AutoDoughKing")
 end
@@ -3142,11 +3198,11 @@ Button(FruitTab, "🌀 Ver Loja Miragem", function()
 end)
 
 -- =========================
--- ABA CDK/TTK
+-- ABA MISSÕES (CDK + TTK + ESTILOS)
 -- =========================
-Section(CDKTab, "Armas Lendárias")
+Section(MissionTab, "Armas Lendárias")
 
-Toggle(CDKTab, "Auto Get CDK", function(v)
+Toggle(MissionTab, "Auto Get CDK", function(v)
     if Sea ~= 3 then
         Notify("⚠️ CDK só está disponível no Sea 3!")
         return
@@ -3154,7 +3210,7 @@ Toggle(CDKTab, "Auto Get CDK", function(v)
     _G.Settings.AutoGetCDK = v
 end, "AutoGetCDK")
 
-Toggle(CDKTab, "Auto Get Soul Guitar", function(v)
+Toggle(MissionTab, "Auto Get Soul Guitar", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Soul Guitar só está disponível no Sea 3!")
         return
@@ -3162,7 +3218,7 @@ Toggle(CDKTab, "Auto Get Soul Guitar", function(v)
     _G.Settings.AutoGetSoulGuitar = v
 end, "AutoGetSoulGuitar")
 
-Toggle(CDKTab, "Auto Get TTK (Triple Katana)", function(v)
+Toggle(MissionTab, "Auto Get TTK (Triple Katana)", function(v)
     if Sea ~= 3 then
         Notify("⚠️ TTK só está disponível no Sea 3!")
         return
@@ -3170,49 +3226,31 @@ Toggle(CDKTab, "Auto Get TTK (Triple Katana)", function(v)
     _G.Settings.AutoGetTTK = v
 end, "AutoGetTTK")
 
-Section(CDKTab, "Informações")
+Section(MissionTab, "Estilos de Luta V1")
 
-local InfoLabel = Instance.new("TextLabel", CDKTab)
-InfoLabel.Size = UDim2.new(1, 0, 0, 150)
-InfoLabel.Text = "📌 CDK - Cursed Dual Katana\nRequer: Tushita + Yama\n\n📌 Soul Guitar\nRequer: Fragmentos + Soul Reaper\n\n📌 TTK - Triple Katana\nRequer: Level 1800+ e 3 espadas\ncom 300+ Mastery"
-InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-InfoLabel.BackgroundColor3 = Config.Tema.Botao
-InfoLabel.BackgroundTransparency = 0.5
-InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.TextSize = 9
-InfoLabel.TextWrapped = true
-InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
-
-Instance.new("UICorner", InfoLabel).CornerRadius = UDim.new(0, 6)
-
--- =========================
--- ABA ESTILOS DE LUTA
--- =========================
-Section(FightingTab, "Estilos V1")
-
-Toggle(FightingTab, "Auto Get Dark Step", function(v)
+Toggle(MissionTab, "Auto Get Dark Step", function(v)
     _G.Settings.AutoGetDarkStep = v
 end, "AutoGetDarkStep")
 
-Toggle(FightingTab, "Auto Get Electric", function(v)
+Toggle(MissionTab, "Auto Get Electric", function(v)
     _G.Settings.AutoGetElectric = v
 end, "AutoGetElectric")
 
-Toggle(FightingTab, "Auto Get Water Kung Fu", function(v)
+Toggle(MissionTab, "Auto Get Water Kung Fu", function(v)
     _G.Settings.AutoGetWaterKungFu = v
 end, "AutoGetWaterKungFu")
 
-Toggle(FightingTab, "Auto Get Dragon Breath", function(v)
+Toggle(MissionTab, "Auto Get Dragon Breath", function(v)
     _G.Settings.AutoGetDragonBreath = v
 end, "AutoGetDragonBreath")
 
-Toggle(FightingTab, "Auto Get Superhuman", function(v)
+Toggle(MissionTab, "Auto Get Superhuman", function(v)
     _G.Settings.AutoGetSuperhuman = v
 end, "AutoGetSuperhuman")
 
-Section(FightingTab, "Estilos V2 (Sea 3)")
+Section(MissionTab, "Estilos de Luta V2 (Sea 3)")
 
-Toggle(FightingTab, "Auto Get Death Step", function(v)
+Toggle(MissionTab, "Auto Get Death Step", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Death Step só no Sea 3!")
         return
@@ -3220,7 +3258,7 @@ Toggle(FightingTab, "Auto Get Death Step", function(v)
     _G.Settings.AutoGetDeathStep = v
 end, "AutoGetDeathStep")
 
-Toggle(FightingTab, "Auto Get Sharkman Karate", function(v)
+Toggle(MissionTab, "Auto Get Sharkman Karate", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Sharkman Karate só no Sea 3!")
         return
@@ -3228,7 +3266,7 @@ Toggle(FightingTab, "Auto Get Sharkman Karate", function(v)
     _G.Settings.AutoGetSharkmanKarate = v
 end, "AutoGetSharkmanKarate")
 
-Toggle(FightingTab, "Auto Get Dragon Talon", function(v)
+Toggle(MissionTab, "Auto Get Dragon Talon", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Dragon Talon só no Sea 3!")
         return
@@ -3236,7 +3274,7 @@ Toggle(FightingTab, "Auto Get Dragon Talon", function(v)
     _G.Settings.AutoGetDragonTalon = v
 end, "AutoGetDragonTalon")
 
-Toggle(FightingTab, "Auto Get Electric Claw", function(v)
+Toggle(MissionTab, "Auto Get Electric Claw", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Electric Claw só no Sea 3!")
         return
@@ -3244,9 +3282,9 @@ Toggle(FightingTab, "Auto Get Electric Claw", function(v)
     _G.Settings.AutoGetElectricClaw = v
 end, "AutoGetElectricClaw")
 
-Section(FightingTab, "Estilos V3 (Sea 3)")
+Section(MissionTab, "Estilos de Luta V3 (Sea 3)")
 
-Toggle(FightingTab, "Auto Get Godhuman", function(v)
+Toggle(MissionTab, "Auto Get Godhuman", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Godhuman só no Sea 3!")
         return
@@ -3254,7 +3292,7 @@ Toggle(FightingTab, "Auto Get Godhuman", function(v)
     _G.Settings.AutoGetGodhuman = v
 end, "AutoGetGodhuman")
 
-Toggle(FightingTab, "Auto Get Sanguine Art", function(v)
+Toggle(MissionTab, "Auto Get Sanguine Art", function(v)
     if Sea ~= 3 then
         Notify("⚠️ Sanguine Art só no Sea 3!")
         return
@@ -3918,23 +3956,14 @@ end)
 print("🎉 LAG TECK HUB v2.0 - TODAS AS 8 PARTES CARREGADAS COM SUCESSO!")
 
 -- =========================
--- CONTROLES DA GUI (CORRIGIDO)
+-- CONTROLES DA GUI
 -- =========================
-
--- Configurar Main antes dos botões
-Main.Active = true
-Main.Visible = false
-
--- Botão da Bolinha (Abrir/Fechar)
 Bubble.MouseButton1Click:Connect(function()
     Config.Aberto = not Config.Aberto
-    print("🔵 Clicou na bolinha! Aberto:", Config.Aberto)
-    
     if Config.Aberto then
         Main.Visible = true
         Main.Size = UDim2.fromOffset(0, 0)
-        Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
-        Body.Visible = true
+        Tween(Main, 0.3, {Size = UDim2.fromOffset(PanelWidth, PanelHeight)})
     else
         Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
         task.wait(0.35)
@@ -3942,25 +3971,22 @@ Bubble.MouseButton1Click:Connect(function()
     end
 end)
 
--- Botão Minimizar
 MinBtn.MouseButton1Click:Connect(function()
     Config.Minimizado = true
     Body.Visible = false
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 50)})
+    Tween(Main, 0.3, {Size = UDim2.fromOffset(PanelWidth, 50)})
     MinBtn.Visible = false
     MaxBtn.Visible = true
 end)
 
--- Botão Maximizar
 MaxBtn.MouseButton1Click:Connect(function()
     Config.Minimizado = false
     Body.Visible = true
-    Tween(Main, 0.3, {Size = UDim2.fromOffset(500, 550)})
+    Tween(Main, 0.3, {Size = UDim2.fromOffset(PanelWidth, PanelHeight)})
     MaxBtn.Visible = false
     MinBtn.Visible = true
 end)
 
--- Botão Fechar
 CloseBtn.MouseButton1Click:Connect(function()
     Config.Aberto = false
     Tween(Main, 0.3, {Size = UDim2.fromOffset(0, 0)})
@@ -3968,16 +3994,14 @@ CloseBtn.MouseButton1Click:Connect(function()
     Main.Visible = false
 end)
 
--- Arrastar pela barra superior
-local dragging = false
-local dragInput, dragStart, startPos
+-- ARRASTAR
+local dragging, dragInput, dragStart, startPos = false
 
 Top.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
-        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -3986,19 +4010,14 @@ Top.InputBegan:Connect(function(input)
     end
 end)
 
-Top.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
-        Main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Busca
+-- BUSCA
 Search:GetPropertyChangedSignal("Text"):Connect(function()
     local searchText = Search.Text:lower()
     for _, tab in pairs(Tabs) do
@@ -4013,20 +4032,4 @@ Search:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- Hover nas abas
-for nome, tab in pairs(Tabs) do
-    tab.Btn.MouseEnter:Connect(function()
-        if not tab.Frame.Visible then
-            Tween(tab.Btn, 0.2, {BackgroundColor3 = Color3.fromRGB(40, 60, 90)})
-        end
-    end)
-    
-    tab.Btn.MouseLeave:Connect(function()
-        if not tab.Frame.Visible then
-            Tween(tab.Btn, 0.2, {BackgroundColor3 = Config.Tema.Botao})
-        end
-    end)
-end
-
-print("✅ GUI PRONTA!")
-Notify("✅ Hub Carregado!", 3)
+print("✅ HUB CARREGADO COMPLETO!")
