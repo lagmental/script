@@ -1699,7 +1699,7 @@ function EquipWeapon(ToolSe)
             game.Players.LocalPlayer.Character.Humanoid:EquipTool(Tool)
         end
     end
-
+end
 -- FUNÇÕES DE VERIFICAÇÃO
 function Check_Sword(swordName)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(swordName) then
@@ -2796,7 +2796,7 @@ local locallv = W:AddLabel("Level")
     local   Shisui =            W:AddLabel("❌ : Shisui")
     local     Saddi =           W:AddLabel("❌ : Saddi")
     local      Wando =         W:AddLabel("❌ : Wando")
-    local     TrueTripleKatana          W:AddLabel("❌ : True Triple Katana")
+    local TrueTripleKatana = W:AddLabel("❌ : True Triple Katana")
     local Section = W:AddSection({
         Name = "World 1 Weapon"
     })
@@ -2817,7 +2817,7 @@ local locallv = W:AddLabel("Level")
     local     SpikeyTrident =          W:AddLabel("❌ : Spikey Trident")
     local   HallowScythe =            W:AddLabel("❌ : Hallow Scythe")
     local     DarkDagger =           W:AddLabel("❌ : Dark Dagger")
-    local     Tushita          W:AddLabel("❌ : Tushita")
+    local Tushita = W:AddLabel("❌ : Tushita")
     local Section = W:AddSection({
         Name = "Gun"
     })
