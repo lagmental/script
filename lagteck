@@ -1,3 +1,29 @@
+-- =========================
+-- SISTEMA DE DEBUG
+-- =========================
+local function SafeExecute(func, errorMsg)
+    local success, err = pcall(func)
+    if not success then
+        warn("❌ ERRO: " .. (errorMsg or "Desconhecido"))
+        warn("Detalhes: " .. tostring(err))
+        
+        -- Notificação visual
+        if Notify then
+            Notify("❌ Erro: " .. (errorMsg or "Verificar F9"), 5)
+        end
+    end
+    return success
+end
+
+-- Testar serviços críticos
+SafeExecute(function()
+    assert(game:GetService("Players"), "Players não encontrado")
+    assert(game:GetService("CoreGui"), "CoreGui não encontrado")
+    assert(game:GetService("ReplicatedStorage"), "ReplicatedStorage não encontrado")
+    print("✅ Serviços básicos OK")
+end, "Verificação de Serviços")
+
+
 repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
 --[[===================================================
     LagTeck Hub - v2.0 ULTRA COMPLETO
